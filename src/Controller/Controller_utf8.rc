@@ -1,0 +1,207 @@
+﻿// Microsoft Visual C++ generated resource script.
+//
+#include "resource_utf8.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#define APSTUDIO_HIDDEN_SYMBOLS
+#include "windows.h"
+#undef APSTUDIO_HIDDEN_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_APP                 ICON                    "Resources\\app.ico"
+
+IDI_FILLER1             ICON                    "Resources\\filler1.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+// Windows 10 folder icons
+IDI_WIN10_1             ICON                    "Resources\\Win10set\\Red.ico"
+
+IDI_WIN10_2             ICON                    "Resources\\Win10set\\Pink.ico"
+
+IDI_WIN10_3             ICON                    "Resources\\Win10set\\Purple.ico"
+
+IDI_WIN10_4             ICON                    "Resources\\Win10set\\Blue.ico"
+
+IDI_WIN10_5             ICON                    "Resources\\Win10set\\Cyan.ico"
+
+IDI_WIN10_6             ICON                    "Resources\\Win10set\\Teal.ico"
+
+IDI_WIN10_7             ICON                    "Resources\\Win10set\\Green.ico"
+
+IDI_WIN10_8             ICON                    "Resources\\Win10set\\Lime.ico"
+
+IDI_WIN10_9             ICON                    "Resources\\Win10set\\Yellow.ico"
+
+IDI_WIN10_10            ICON                    "Resources\\Win10set\\Orange.ico"
+
+IDI_WIN10_11            ICON                    "Resources\\Win10set\\Brown.ico"
+
+IDI_WIN10_12            ICON                    "Resources\\Win10set\\Gray.ico"
+
+IDI_WIN10_13            ICON                    "Resources\\Win10set\\Blue gray.ico"
+
+IDI_WIN10_14            ICON                    "Resources\\Win10set\\Black.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+// Windows 7&8 folder icons
+IDI_WIN78_1             ICON                    "Resources\\Win7_8set\\Red.ico"
+
+IDI_WIN78_2             ICON                    "Resources\\Win7_8set\\Pink.ico"
+
+IDI_WIN78_3             ICON                    "Resources\\Win7_8set\\Purple.ico"
+
+IDI_WIN78_4             ICON                    "Resources\\Win7_8set\\Blue.ico"
+
+IDI_WIN78_5             ICON                    "Resources\\Win7_8set\\Cyan.ico"
+
+IDI_WIN78_6             ICON                    "Resources\\Win7_8set\\Teal.ico"
+
+IDI_WIN78_7             ICON                    "Resources\\Win7_8set\\Green.ico"
+
+IDI_WIN78_8             ICON                    "Resources\\Win7_8set\\Lime.ico"
+
+IDI_WIN78_9             ICON                    "Resources\\Win7_8set\\Yellow.ico"
+
+IDI_WIN78_10            ICON                    "Resources\\Win7_8set\\Orange.ico"
+
+IDI_WIN78_11            ICON                    "Resources\\Win7_8set\\Brown.ico"
+
+IDI_WIN78_12            ICON                    "Resources\\Win7_8set\\Gray.ico"
+
+IDI_WIN78_13            ICON                    "Resources\\Win7_8set\\Blue gray.ico"
+
+IDI_WIN78_14            ICON                    "Resources\\Win7_8set\\Black.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+// Windows 11 folder icons
+IDI_WIN11_1             ICON                    "Resources\\Win11set\\Red.ico"
+
+IDI_WIN11_2             ICON                    "Resources\\Win11set\\Pink.ico"
+
+IDI_WIN11_3             ICON                    "Resources\\Win11set\\Purple.ico"
+
+IDI_WIN11_4             ICON                    "Resources\\Win11set\\Blue.ico"
+
+IDI_WIN11_5             ICON                    "Resources\\Win11set\\Cyan.ico"
+
+IDI_WIN11_6             ICON                    "Resources\\Win11set\\Teal.ico"
+
+IDI_WIN11_7             ICON                    "Resources\\Win11set\\Green.ico"
+
+IDI_WIN11_8             ICON                    "Resources\\Win11set\\Lime.ico"
+
+IDI_WIN11_9             ICON                    "Resources\\Win11set\\Yellow.ico"
+
+IDI_WIN11_10            ICON                    "Resources\\Win11set\\Orange.ico"
+
+IDI_WIN11_11            ICON                    "Resources\\Win11set\\Brown.ico"
+
+IDI_WIN11_12            ICON                    "Resources\\Win11set\\Gray.ico"
+
+IDI_WIN11_13            ICON                    "Resources\\Win11set\\Blue gray.ico"
+
+IDI_WIN11_14            ICON                    "Resources\\Win11set\\Black.ico"
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource_utf8.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""windows.h""\r\n"
+    "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_MAIN DIALOGEX 0, 0, 200, 123
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_CONTROLPARENT | WS_EX_APPWINDOW
+CAPTION "Folcolor"
+FONT 8, "Tahoma", 700, 0, 0x0
+BEGIN
+    CONTROL         IDB_BACKGROUND,IDC_STATIC,"Static",SS_BITMAP,0,0,200,132
+    PUSHBUTTON      "Install",IDC_INSTALL_UNINSTALL,123,85,65,15,BS_FLAT
+    PUSHBUTTON      "Refresh Window icons",IDC_REFRESH,9,85,100,15,BS_FLAT
+    CTEXT           "www.folcolor.com",IDC_HYPERLINK,48,105,105,11,SS_CENTERIMAGE | WS_TABSTOP,WS_EX_TRANSPARENT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_MAIN, DIALOG
+    BEGIN
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_BACKGROUND          BITMAP                  "Resources\\main_back.bmp"
+
+#endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

@@ -4,29 +4,20 @@
 #include "StdAfx.h"
 #include "resource.h"
 #include "FolderColorize.h"
+#include "Language.h"
 
 extern WCHAR myPathGlobal[MAX_PATH];
 extern int iconOffsetGlobal;
+extern LANG_ID g_currentLang;
 
 
-// Icon index to color label
-static const LPCSTR nameTable[COLOR_ICON_COUNT] =
+// Icon index to color label: now fetched using GetColorName for i18n
+
+
+static const char* GetMenuString(int stringId)
 {
-	"Red",
-	"Pink",
-	"Purple",
-	"Blue",
-	"Cyan",
-	"Teal",
-	"Green",
-	"Lime",
-	"Yellow",
-	"Orange",
-	"Brown",
-	"Grey",
-	"Blue Grey",
-	"Black",
-};
+	return GetLangString(g_currentLang, stringId);
+}
 
 
 // Return TRUE if system has our installed registry entry
@@ -82,7 +73,7 @@ static void InstallRegistry()
 		WRITE_STRING(_key, "", buffer, (len + 1))
 
 	// Root command entry
-	WRITE_LITERAL(rootKey, "MUIVerb", "Color Folder");
+	WRITE_LITERAL(rootKey, "MUIVerb", GetMenuString(STR_COLOR_FOLDER));
 	WRITE_LITERAL(rootKey, "SubCommands", "");
 	len = sprintf_s(buffer, sizeof(buffer), "%s" TARGET_NAME, srcPath);
 	WRITE_STRING(rootKey, "Icon", buffer, (len + 1));
@@ -102,7 +93,7 @@ static void InstallRegistry()
 			sprintf_s(num, sizeof(num), "%02u", i);
 			CREATE_KEY(shellKey, num, numberKey);
 			WRITE_ICON(numberKey, (i + (UINT) iconOffsetGlobal))
-			WRITE_STRING(numberKey, "MUIVerb", nameTable[i], strlen(nameTable[i])+1);
+			WRITE_STRING(numberKey, "MUIVerb", GetColorName(g_currentLang, i), (DWORD)strlen(GetColorName(g_currentLang, i)) + 1);
 
 				// ---------------------------------------------------------------------------
 				// HKEY_CLASSES_ROOT\Directory\shell\Folcolor\shell\nn\command
@@ -124,7 +115,7 @@ static void InstallRegistry()
 		#define DEFAULT_FOLDER_ICON_GROUP "%SystemRoot%\\system32\\shell32.dll,4"
 		WRITE_STRING(numberKey, "Icon", DEFAULT_FOLDER_ICON_GROUP, sizeof(DEFAULT_FOLDER_ICON_GROUP));
 		#undef DEFAULT_FOLDER_ICON_GROUP
-		WRITE_LITERAL(numberKey, "MUIVerb", "Restore Default");
+		WRITE_LITERAL(numberKey, "MUIVerb", GetMenuString(STR_RESTORE_DEFAULT));
 		// Line separator
 		WRITE_DWORD(numberKey, "CommandFlags", 0x20);
 			// ---------------------------------------------------------------------------
@@ -144,7 +135,7 @@ static void InstallRegistry()
 		CREATE_KEY(shellKey, "15", numberKey);
 		len = sprintf_s(buffer, sizeof(buffer), "%s" TARGET_NAME, srcPath);
 		WRITE_STRING(numberKey, "Icon", buffer, (len + 1));
-		WRITE_LITERAL(numberKey, "MUIVerb", "Launch Folcolor");
+		WRITE_LITERAL(numberKey, "MUIVerb", GetMenuString(STR_LAUNCH_FOLCOLOR));
 		// Add UAC overlay to the icon to reflect needing administrator elevation
 		WRITE_LITERAL(numberKey, "HasLUAShield", "");
 		// Line separator

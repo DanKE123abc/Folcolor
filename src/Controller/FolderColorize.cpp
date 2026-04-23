@@ -4,9 +4,11 @@
 #include "StdAfx.h"
 #include "resource.h"
 #include "FolderColorize.h"
+#include "Language.h"
 
 extern WCHAR myPathGlobal[MAX_PATH];
 extern int iconOffsetGlobal;
+extern LANG_ID g_currentLang;
 
 
 // Restore default folder icon by removing the folder "desktop.ini"
@@ -156,12 +158,12 @@ void SetFolderColor(int index, LPWSTR folderPath)
 				if (wcsncmp(iconPath + SIZESTR(L"C:"), L"\\windows\\", SIZESTR(L"\\windows\\")) == 0)
 				{
 					// Yes, abort
-					MessageBoxA(NULL,
-						PROJECT_NAME " detects this as possibly a special folder (I.E. \"Downloads\", \"Documents\", \"Music\", etc.) and is not supported since restoring them is complex.\n\n"
-						"If you really want to set the color/icon for this folder, manually edit or just delete the existing \"desktop.ini\" (hidden, system) file first.\n"
-						"And then if you want to restore a special system folder icon later, it CAN be done through manual restore steps (Web search on how).\n"
-						,
-						PROJECT_NAME " abort:", (MB_OK | MB_ICONERROR));
+					const char* abortStr = GetLangString(g_currentLang, STR_ABORT);
+					const char* specialFolderStr = GetLangString(g_currentLang, STR_SPECIAL_FOLDER);
+					const char* manualEditStr = GetLangString(g_currentLang, STR_MANUAL_EDIT);
+					char msg[512];
+					sprintf_s(msg, sizeof(msg), "%s\n\n%s\n\n%s", specialFolderStr, manualEditStr, PROJECT_NAME);
+					MessageBoxA(NULL, msg, abortStr, (MB_OK | MB_ICONERROR));
 					return;
 				}
 			}

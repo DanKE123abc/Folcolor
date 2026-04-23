@@ -5,6 +5,7 @@
 #include <versionhelpers.h>
 #include "resource.h"
 #include "FolderColorize.h"
+#include "Language.h"
 
 #define APP_URL "http://www.folcolor.com/"
 
@@ -308,7 +309,10 @@ static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			}
 
 			if (isInstalled)
-				SetDlgItemTextA(hWnd, IDC_INSTALL_UNINSTALL, "Uninstall");
+			{
+				const char* uninstallStr = GetLangString(g_currentLang, STR_UNINSTALL);
+				SetDlgItemTextA(hWnd, IDC_INSTALL_UNINSTALL, uninstallStr);
+			}
 
 			return (INT_PTR) TRUE;
 		}
@@ -319,39 +323,50 @@ static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			switch (LOWORD(wParam))
 			{
 				// Install/Uninstall
-				case IDC_INSTALL_UNINSTALL:
+case IDC_INSTALL_UNINSTALL:
+			{
+				const char* installStr = GetLangString(g_currentLang, STR_INSTALL);
+				const char* uninstallStr = GetLangString(g_currentLang, STR_UNINSTALL);
+				const char* completionStr = GetLangString(g_currentLang, STR_COMPLETION);
+				const char* installCompleteStr = GetLangString(g_currentLang, STR_INSTALL_COMPLETE);
+				const char* confirmUninstallStr = GetLangString(g_currentLang, STR_CONFIRM_UNINSTALL);
+				const char* registryUninstalledStr = GetLangString(g_currentLang, STR_REGISTRY_UNINSTALLED);
+				const char* manualDeleteStr = GetLangString(g_currentLang, STR_MANUAL_DELETE);
+				const char* uninstallCompleteStr = GetLangString(g_currentLang, STR_UNINSTALL_COMPLETE);
+
+				if (!isInstalled)
 				{
-					if (!isInstalled)
+					Install();
+					isInstalled = TRUE;
+					SetDlgItemTextA(hWnd, IDC_INSTALL_UNINSTALL, uninstallStr);
+					MessageBoxA(hWnd, installCompleteStr, completionStr, (MB_OK | MB_ICONASTERISK));
+					EndDialog(hWnd, 0);
+				}
+				else
+				{
+					char confirmMsg[512];
+					sprintf_s(confirmMsg, sizeof(confirmMsg), "%s %s?", PROJECT_NAME, confirmUninstallStr);
+					if (MessageBoxA(hWnd, confirmMsg, completionStr, (MB_OKCANCEL | MB_ICONQUESTION)) == IDOK)
 					{
-						Install();
-						isInstalled = TRUE;
-						SetDlgItemTextA(hWnd, IDC_INSTALL_UNINSTALL, "Uninstall");
-						MessageBoxA(hWnd, "Installation complete.", "Completion:", (MB_OK | MB_ICONASTERISK));
+						int ur = Uninstall();
+						isInstalled = FALSE;
+						SetDlgItemTextA(hWnd, IDC_INSTALL_UNINSTALL, installStr);
+
+						if (ur == 0)
+						{
+							char msg[512];
+							sprintf_s(msg, sizeof(msg), "%s\n\"%S\"\n%s.", registryUninstalledStr, myPathGlobal, manualDeleteStr);
+							MessageBoxA(hWnd, msg, completionStr, (MB_OK | MB_ICONASTERISK));
+						}
+						else
+							MessageBoxA(hWnd, uninstallCompleteStr, completionStr, (MB_OK | MB_ICONASTERISK));
+
 						EndDialog(hWnd, 0);
 					}
-					else
-					{
-						if (MessageBoxA(hWnd, "Uninstall " PROJECT_NAME"?", "Confirmation:", (MB_OKCANCEL | MB_ICONQUESTION)) == IDOK)
-						{
-							int ur = Uninstall();
-							isInstalled = FALSE;
-							SetDlgItemTextA(hWnd, IDC_INSTALL_UNINSTALL, "Install");
-
-							if (ur == 0)
-							{
-								char msg[512];
-								sprintf_s(msg, sizeof(msg), PROJECT_NAME " registry uninstalled, but to complete the uninstallation manually delete the\n\"%S\"\nfolder after this dialog closes.", myPathGlobal);
-								MessageBoxA(hWnd, msg, "Completion:", (MB_OK | MB_ICONASTERISK));
-							}
-							else
-								MessageBoxA(hWnd, PROJECT_NAME " uninstalled.", "Completion:", (MB_OK | MB_ICONASTERISK));
-
-							EndDialog(hWnd, 0);
-						}
-					}
-
-					return (INT_PTR) TRUE;
 				}
+
+				return (INT_PTR) TRUE;
+			}
 				break;
 
 				// Refresh Windows icon cache DB
@@ -397,6 +412,9 @@ static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
+	// Detect system language first
+	g_currentLang = DetectSystemLanguage();
+
 	// Should only be one instance running
 	if(FindDoppelganger())
 		return EXIT_FAILURE;
