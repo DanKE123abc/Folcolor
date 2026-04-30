@@ -1,4 +1,4 @@
-// Folcolor(tm) (c) 2020 Kevin Weatherman
+﻿// Folcolor(tm) (c) 2020 Kevin Weatherman
 // MIT license https://opensource.org/licenses/MIT
 #pragma once
 

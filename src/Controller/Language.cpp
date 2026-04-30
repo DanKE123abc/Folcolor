@@ -1,4 +1,4 @@
-
+﻿
 // Folcolor(tm) (c) 2020 Kevin Weatherman
 // MIT license https://opensource.org/licenses/MIT
 #include "StdAfx.h"
