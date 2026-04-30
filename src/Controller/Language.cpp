@@ -26,6 +26,7 @@ const wchar_t* GetColorName(LANG_ID lang, int colorIndex) {
 
 
 LANG_ID g_currentLang = LANG_EN;
+BOOL g_isWin11 = FALSE;
 
 static const wchar_t* langStrings[LANG_COUNT][14] =
 {
