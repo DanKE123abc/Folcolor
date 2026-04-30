@@ -40,7 +40,7 @@ static const char* GetMenuString(int stringId)
 BOOL HasInstallRegistry()
 {
 	HKEY rootKey = NULL;
-	LSTATUS lStatus = RegOpenKeyExW(HKEY_CLASSES_ROOT, REGISTRY_PATH, 0, KEY_READ, &rootKey);
+	LSTATUS lStatus = RegOpenKeyExA(HKEY_CLASSES_ROOT, REGISTRY_PATH, 0, KEY_READ, &rootKey);
 	if (lStatus == ERROR_SUCCESS)
 	{
 		RegCloseKey(rootKey);
@@ -58,8 +58,8 @@ static void InstallRegistry()
 
 	LSTATUS lStatus;
 	#define CREATE_KEY(_root, _path, _outkey) \
-		lStatus = RegCreateKeyExW(_root, _path, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &_outkey, NULL); \
-		if (lStatus != ERROR_SUCCESS) CRITICAL_API_FAIL(RegCreateKeyExW, lStatus);
+		lStatus = RegCreateKeyExA(_root, _path, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &_outkey, NULL); \
+		if (lStatus != ERROR_SUCCESS) CRITICAL_API_FAIL(RegCreateKeyExA, lStatus);
 
 	// Root: HKEY_CLASSES_ROOT\Directory\shell\Folcolor
 	HKEY rootKey = NULL;
