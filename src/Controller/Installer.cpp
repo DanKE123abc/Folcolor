@@ -1,9 +1,9 @@
 // Folcolor(rm) (c) 2020 Kevin Weatherman
 // MIT license https://opensource.org/ licenses/ MIT
-# include "StdAfx. h"
-# include "resource. h"
-# include "FolderColorize. h"
-# include "Language. h"
+#include "StdAfx.h"
+#include "resource.h"
+#include "FolderColorize.h"
+#include "Language.h"
 extern WCHAR myPathGlobal[ MAX_PATH];
 extern int iconOffsetGlobal;
 extern LANG_ID g_ currentLang;
