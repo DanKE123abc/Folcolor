@@ -158,12 +158,12 @@ void SetFolderColor(int index, LPWSTR folderPath)
 				if (wcsncmp(iconPath + SIZESTR(L"C:"), L"\\windows\\", SIZESTR(L"\\windows\\")) == 0)
 				{
 					// Yes, abort
-					const char* abortStr = GetLangString(g_currentLang, STR_ABORT);
-					const char* specialFolderStr = GetLangString(g_currentLang, STR_SPECIAL_FOLDER);
-					const char* manualEditStr = GetLangString(g_currentLang, STR_MANUAL_EDIT);
-					char msg[512];
-					sprintf_s(msg, sizeof(msg), "%s\n\n%s\n\n%s", specialFolderStr, manualEditStr, PROJECT_NAME);
-					MessageBoxA(NULL, msg, abortStr, (MB_OK | MB_ICONERROR));
+						const wchar_t* abortStr = GetLangString(g_currentLang, STR_ABORT);
+						const wchar_t* specialFolderStr = GetLangString(g_currentLang, STR_SPECIAL_FOLDER);
+						const wchar_t* manualEditStr = GetLangString(g_currentLang, STR_MANUAL_EDIT);
+						wchar_t msg[512];
+						swprintf_s(msg, _countof(msg), L"%s\n\n%s\n\n%s", specialFolderStr, manualEditStr, PROJECT_NAME_W);
+						MessageBoxW(NULL, msg, abortStr, (MB_OK | MB_ICONERROR));
 					return;
 				}
 			}

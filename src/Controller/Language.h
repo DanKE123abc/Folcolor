@@ -17,7 +17,7 @@ enum LANG_ID
 extern LANG_ID g_currentLang;
 
 LANG_ID DetectSystemLanguage();
-const char* GetLangString(LANG_ID lang, int stringId);
+const wchar_t* GetLangString(LANG_ID lang, int stringId);
 
 #define STR_COLOR_FOLDER 0
 #define STR_RESTORE_DEFAULT 1
@@ -38,4 +38,4 @@ const char* GetLangString(LANG_ID lang, int stringId);
 #define COLOR_LABEL_COUNT 15
 
 // Get color label in the appropriate language
-const char* GetColorName(LANG_ID lang, int colorIndex);
+const wchar_t* GetColorName(LANG_ID lang, int colorIndex);

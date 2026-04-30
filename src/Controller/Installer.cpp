@@ -14,9 +14,25 @@ extern LANG_ID g_currentLang;
 // Icon index to color label: now fetched using GetColorName for i18n
 
 
+// Convert wide string to ANSI CP buffer (thread-local temporary)
+static const char* WideToAnsiTemp(const wchar_t* wstr)
+{
+	static char buf[1024];
+	if (!wstr)
+	{
+		buf[0] = '\0';
+		return buf;
+	}
+	int ret = WideCharToMultiByte(CP_ACP, 0, wstr, -1, buf, (int)sizeof(buf), NULL, NULL);
+	if (ret == 0)
+		buf[0] = '\0';
+	return buf;
+}
+
 static const char* GetMenuString(int stringId)
 {
-	return GetLangString(g_currentLang, stringId);
+	const wchar_t* ws = GetLangString(g_currentLang, stringId);
+	return WideToAnsiTemp(ws);
 }
 
 
@@ -24,7 +40,7 @@ static const char* GetMenuString(int stringId)
 BOOL HasInstallRegistry()
 {
 	HKEY rootKey = NULL;
-	LSTATUS lStatus = RegOpenKeyExA(HKEY_CLASSES_ROOT, REGISTRY_PATH, 0, KEY_READ, &rootKey);
+	LSTATUS lStatus = RegOpenKeyExW(HKEY_CLASSES_ROOT, REGISTRY_PATH, 0, KEY_READ, &rootKey);
 	if (lStatus == ERROR_SUCCESS)
 	{
 		RegCloseKey(rootKey);
@@ -42,8 +58,8 @@ static void InstallRegistry()
 
 	LSTATUS lStatus;
 	#define CREATE_KEY(_root, _path, _outkey) \
-		lStatus = RegCreateKeyExA(_root, _path, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &_outkey, NULL); \
-		if (lStatus != ERROR_SUCCESS) CRITICAL_API_FAIL(RegCreateKeyExA, lStatus);
+		lStatus = RegCreateKeyExW(_root, _path, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &_outkey, NULL); \
+		if (lStatus != ERROR_SUCCESS) CRITICAL_API_FAIL(RegCreateKeyExW, lStatus);
 
 	// Root: HKEY_CLASSES_ROOT\Directory\shell\Folcolor
 	HKEY rootKey = NULL;
@@ -73,7 +89,8 @@ static void InstallRegistry()
 		WRITE_STRING(_key, "", buffer, (len + 1))
 
 	// Root command entry
-	WRITE_LITERAL(rootKey, "MUIVerb", GetMenuString(STR_COLOR_FOLDER));
+	const wchar_t* colorFolderW = GetLangString(g_currentLang, STR_COLOR_FOLDER);
+	RegSetValueExW(rootKey, L"MUIVerb", 0, REG_SZ, (PBYTE)colorFolderW, (DWORD)((wcslen(colorFolderW) + 1) * sizeof(wchar_t)));
 	WRITE_LITERAL(rootKey, "SubCommands", "");
 	len = sprintf_s(buffer, sizeof(buffer), "%s" TARGET_NAME, srcPath);
 	WRITE_STRING(rootKey, "Icon", buffer, (len + 1));
@@ -93,7 +110,8 @@ static void InstallRegistry()
 			sprintf_s(num, sizeof(num), "%02u", i);
 			CREATE_KEY(shellKey, num, numberKey);
 			WRITE_ICON(numberKey, (i + (UINT) iconOffsetGlobal))
-			WRITE_STRING(numberKey, "MUIVerb", GetColorName(g_currentLang, i), (DWORD)strlen(GetColorName(g_currentLang, i)) + 1);
+			const wchar_t* colorNameW = GetColorName(g_currentLang, i);
+			RegSetValueExW(numberKey, L"MUIVerb", 0, REG_SZ, (PBYTE)colorNameW, (DWORD)((wcslen(colorNameW) + 1) * sizeof(wchar_t)));
 
 				// ---------------------------------------------------------------------------
 				// HKEY_CLASSES_ROOT\Directory\shell\Folcolor\shell\nn\command
@@ -115,7 +133,8 @@ static void InstallRegistry()
 		#define DEFAULT_FOLDER_ICON_GROUP "%SystemRoot%\\system32\\shell32.dll,4"
 		WRITE_STRING(numberKey, "Icon", DEFAULT_FOLDER_ICON_GROUP, sizeof(DEFAULT_FOLDER_ICON_GROUP));
 		#undef DEFAULT_FOLDER_ICON_GROUP
-		WRITE_LITERAL(numberKey, "MUIVerb", GetMenuString(STR_RESTORE_DEFAULT));
+		const wchar_t* restoreDefaultW = GetLangString(g_currentLang, STR_RESTORE_DEFAULT);
+		RegSetValueExW(numberKey, L"MUIVerb", 0, REG_SZ, (PBYTE)restoreDefaultW, (DWORD)((wcslen(restoreDefaultW) + 1) * sizeof(wchar_t)));
 		// Line separator
 		WRITE_DWORD(numberKey, "CommandFlags", 0x20);
 			// ---------------------------------------------------------------------------
@@ -135,7 +154,8 @@ static void InstallRegistry()
 		CREATE_KEY(shellKey, "15", numberKey);
 		len = sprintf_s(buffer, sizeof(buffer), "%s" TARGET_NAME, srcPath);
 		WRITE_STRING(numberKey, "Icon", buffer, (len + 1));
-		WRITE_LITERAL(numberKey, "MUIVerb", GetMenuString(STR_LAUNCH_FOLCOLOR));
+		const wchar_t* launchFolcolorW = GetLangString(g_currentLang, STR_LAUNCH_FOLCOLOR);
+		RegSetValueExW(numberKey, L"MUIVerb", 0, REG_SZ, (PBYTE)launchFolcolorW, (DWORD)((wcslen(launchFolcolorW) + 1) * sizeof(wchar_t)));
 		// Add UAC overlay to the icon to reflect needing administrator elevation
 		WRITE_LITERAL(numberKey, "HasLUAShield", "");
 		// Line separator

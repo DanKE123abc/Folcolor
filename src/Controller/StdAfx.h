@@ -18,8 +18,10 @@
 #include "Utility.h"
 
 #define APP_VERSION "1.2.0"  
+#define APP_VERSION_W L"1.2.0"
 
 #define PROJECT_NAME "Folcolor"
+#define PROJECT_NAME_W L"Folcolor"
 #define INSTALL_FOLDER L"Folcolor"
 
 #define REGISTRY_PATH "Directory\\shell\\Folcolor"

@@ -227,7 +227,11 @@ static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		case WM_INITDIALOG:
 		{
 			// Add info to caption
-			SetWindowTextA(hWnd, PROJECT_NAME " " APP_VERSION " Built: " __DATE__);
+			{
+				wchar_t title[256];
+				swprintf_s(title, _countof(title), L"%s %s Built: %S", PROJECT_NAME_W, APP_VERSION_W, __DATE__);
+				SetWindowTextW(hWnd, title);
+			}
 
 			// Set dialog icon
 			HICON hIcon = LoadIconA((HINSTANCE) GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_APP));
@@ -310,8 +314,8 @@ static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
 			if (isInstalled)
 			{
-				const char* uninstallStr = GetLangString(g_currentLang, STR_UNINSTALL);
-				SetDlgItemTextA(hWnd, IDC_INSTALL_UNINSTALL, uninstallStr);
+				const wchar_t* uninstallStr = GetLangString(g_currentLang, STR_UNINSTALL);
+				SetDlgItemTextW(hWnd, IDC_INSTALL_UNINSTALL, uninstallStr);
 			}
 
 			return (INT_PTR) TRUE;
@@ -325,41 +329,41 @@ static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 				// Install/Uninstall
 case IDC_INSTALL_UNINSTALL:
 			{
-				const char* installStr = GetLangString(g_currentLang, STR_INSTALL);
-				const char* uninstallStr = GetLangString(g_currentLang, STR_UNINSTALL);
-				const char* completionStr = GetLangString(g_currentLang, STR_COMPLETION);
-				const char* installCompleteStr = GetLangString(g_currentLang, STR_INSTALL_COMPLETE);
-				const char* confirmUninstallStr = GetLangString(g_currentLang, STR_CONFIRM_UNINSTALL);
-				const char* registryUninstalledStr = GetLangString(g_currentLang, STR_REGISTRY_UNINSTALLED);
-				const char* manualDeleteStr = GetLangString(g_currentLang, STR_MANUAL_DELETE);
-				const char* uninstallCompleteStr = GetLangString(g_currentLang, STR_UNINSTALL_COMPLETE);
+				const wchar_t* installStr = GetLangString(g_currentLang, STR_INSTALL);
+				const wchar_t* uninstallStr = GetLangString(g_currentLang, STR_UNINSTALL);
+				const wchar_t* completionStr = GetLangString(g_currentLang, STR_COMPLETION);
+				const wchar_t* installCompleteStr = GetLangString(g_currentLang, STR_INSTALL_COMPLETE);
+				const wchar_t* confirmUninstallStr = GetLangString(g_currentLang, STR_CONFIRM_UNINSTALL);
+				const wchar_t* registryUninstalledStr = GetLangString(g_currentLang, STR_REGISTRY_UNINSTALLED);
+				const wchar_t* manualDeleteStr = GetLangString(g_currentLang, STR_MANUAL_DELETE);
+				const wchar_t* uninstallCompleteStr = GetLangString(g_currentLang, STR_UNINSTALL_COMPLETE);
 
 				if (!isInstalled)
 				{
 					Install();
 					isInstalled = TRUE;
-					SetDlgItemTextA(hWnd, IDC_INSTALL_UNINSTALL, uninstallStr);
-					MessageBoxA(hWnd, installCompleteStr, completionStr, (MB_OK | MB_ICONASTERISK));
+					SetDlgItemTextW(hWnd, IDC_INSTALL_UNINSTALL, uninstallStr);
+					MessageBoxW(hWnd, installCompleteStr, completionStr, (MB_OK | MB_ICONASTERISK));
 					EndDialog(hWnd, 0);
 				}
 				else
 				{
-					char confirmMsg[512];
-					sprintf_s(confirmMsg, sizeof(confirmMsg), "%s %s?", PROJECT_NAME, confirmUninstallStr);
-					if (MessageBoxA(hWnd, confirmMsg, completionStr, (MB_OKCANCEL | MB_ICONQUESTION)) == IDOK)
+					wchar_t confirmMsg[512];
+					swprintf_s(confirmMsg, _countof(confirmMsg), L"%s %s?", PROJECT_NAME_W, confirmUninstallStr);
+					if (MessageBoxW(hWnd, confirmMsg, completionStr, (MB_OKCANCEL | MB_ICONQUESTION)) == IDOK)
 					{
 						int ur = Uninstall();
 						isInstalled = FALSE;
-						SetDlgItemTextA(hWnd, IDC_INSTALL_UNINSTALL, installStr);
+						SetDlgItemTextW(hWnd, IDC_INSTALL_UNINSTALL, installStr);
 
 						if (ur == 0)
 						{
-							char msg[512];
-							sprintf_s(msg, sizeof(msg), "%s\n\"%S\"\n%s.", registryUninstalledStr, myPathGlobal, manualDeleteStr);
-							MessageBoxA(hWnd, msg, completionStr, (MB_OK | MB_ICONASTERISK));
+							wchar_t msg[512];
+							swprintf_s(msg, _countof(msg), L"%s\n\"%s\"\n%s.", registryUninstalledStr, myPathGlobal, manualDeleteStr);
+							MessageBoxW(hWnd, msg, completionStr, (MB_OK | MB_ICONASTERISK));
 						}
 						else
-							MessageBoxA(hWnd, uninstallCompleteStr, completionStr, (MB_OK | MB_ICONASTERISK));
+							MessageBoxW(hWnd, uninstallCompleteStr, completionStr, (MB_OK | MB_ICONASTERISK));
 
 						EndDialog(hWnd, 0);
 					}
