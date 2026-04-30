@@ -25,6 +25,7 @@
 #define INSTALL_FOLDER L"Folcolor"
 
 #define REGISTRY_PATH "Directory\\shell\\Folcolor"
+#define REGISTRY_PATH_WIN11 "Software\\Classes\\Directory\\Background\\shell\\Folcolor"
 
 #define COMMAND_ICON "--index="
 #define COMMAND_FOLDER "--folder="

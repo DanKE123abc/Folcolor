@@ -85,7 +85,7 @@ static void InstallShellMenu(HKEY _root, LPCSTR _rootRegPath, const char* _iconS
 	for (UINT i = 0; i < COLOR_ICON_COUNT; i++)
 	{
 		char num[8];
-		sprintf(num, sizeof(num), "%02u", i);
+		sprintf_s(num, sizeof(num), "%02u", i);
 		CREATE_SUBKEY(shellKey, num, colorKey);
 		WRITE_ICON_ENTRY(colorKey, (i + (UINT)iconOffsetGlobal));
 		const wchar_t* colorNameW = GetColorName(g_currentLang, i);
