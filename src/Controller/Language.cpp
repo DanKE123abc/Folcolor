@@ -46,7 +46,7 @@ static const wchar_t* langStrings[LANG_COUNT][14] =
         L"If you really want to set the color/icon for this folder, manually edit or just delete the existing desktop.ini (hidden, system) file first.",
     },
     {
-        L"彩色文件夹",
+        L"文件夹颜色",
         L"恢复默认",
         L"启动 Folcolor",
         L"安装",
@@ -62,7 +62,7 @@ static const wchar_t* langStrings[LANG_COUNT][14] =
         L"如果真的想为此文件夹设置颜色/图标，请先手动编辑或删除现有的 desktop.ini（隐藏、系统）文件。",
     },
     {
-        L"彩色資料夾",
+        L"資料夾彩色",
         L"還原預設",
         L"啟動 Folcolor",
         L"安裝",
