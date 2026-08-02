@@ -12,7 +12,7 @@ extern BOOL g_isWin11;
 // Convert wide string to ANSI CP buffer (thread-local temporary)
 static const char* WideToAnsiTemp(const wchar_t* wstr)
 {
-	static char buf[10];
+	static char buf[1024];
 	if (!wstr)
 	{
 		buf[0] = '\0';
@@ -66,7 +66,7 @@ static void InstallShellMenu(HKEY _root, LPCSTR _rootRegPath, const char* _iconS
 	if (lStatus != ERROR_SUCCESS)
 		CRITICAL_API_FAIL(RegCreateKeyExA, lStatus);
 	int len;
-	char buffer[10];
+	char buffer[sizeof(COMMAND_ICON "16") + sizeof(COMMAND_FOLDER) + MAX_PATH];
 	DWORD dwValue;
 #define WRITE_STRING(_k, _n, _s, _sz) lStatus = RegSetValueEx(_k, _n, 0, REG_SZ, (PBYTE)(_s), (DWORD)(_sz)); if (lStatus != ERROR_SUCCESS) CRITICAL_API_FAIL(RegSetValueEx, lStatus);
 #define WRITE_LITERAL(_k, _n, _lit) WRITE_STRING(_k, _n, _lit, sizeof(_lit))

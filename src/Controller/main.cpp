@@ -317,6 +317,15 @@ static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 				const wchar_t* uninstallStr = GetLangString(g_currentLang, STR_UNINSTALL);
 				SetDlgItemTextW(hWnd, IDC_INSTALL_UNINSTALL, uninstallStr);
 			}
+			else
+			{
+				const wchar_t* installStr = GetLangString(g_currentLang, STR_INSTALL);
+				SetDlgItemTextW(hWnd, IDC_INSTALL_UNINSTALL, installStr);
+			}
+			{
+				const wchar_t* refreshStr = GetLangString(g_currentLang, STR_REFRESH_WINDOW);
+				SetDlgItemTextW(hWnd, IDC_REFRESH, refreshStr);
+			}
 
 			return (INT_PTR) TRUE;
 		}

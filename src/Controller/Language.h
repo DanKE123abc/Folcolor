@@ -33,6 +33,9 @@ const wchar_t* GetLangString(LANG_ID lang, int stringId);
 #define STR_ABORT 11
 #define STR_SPECIAL_FOLDER 12
 #define STR_MANUAL_EDIT 13
+#define STR_REFRESH_WINDOW 14
+
+#define LANG_STRING_COUNT 15
 
 // Color label count
 #define COLOR_LABEL_COUNT 15
