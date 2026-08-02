@@ -18,6 +18,7 @@ extern LANG_ID g_currentLang;
 
 LANG_ID DetectSystemLanguage();
 const wchar_t* GetLangString(LANG_ID lang, int stringId);
+const wchar_t* GetLangDisplayName(LANG_ID lang);
 
 #define STR_COLOR_FOLDER 0
 #define STR_RESTORE_DEFAULT 1

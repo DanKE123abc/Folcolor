@@ -218,6 +218,39 @@ static LRESULT CALLBACK HypLinkSubclass(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 
 // ----------------------------------------------------------------------------
 
+// Apply language-dependent dialog texts (buttons) for the current language
+static void ApplyLanguageTexts(HWND hWnd)
+{
+	if (isInstalled)
+	{
+		const wchar_t* uninstallStr = GetLangString(g_currentLang, STR_UNINSTALL);
+		SetDlgItemTextW(hWnd, IDC_INSTALL_UNINSTALL, uninstallStr);
+	}
+	else
+	{
+		const wchar_t* installStr = GetLangString(g_currentLang, STR_INSTALL);
+		SetDlgItemTextW(hWnd, IDC_INSTALL_UNINSTALL, installStr);
+	}
+	{
+		const wchar_t* refreshStr = GetLangString(g_currentLang, STR_REFRESH_WINDOW);
+		SetDlgItemTextW(hWnd, IDC_REFRESH, refreshStr);
+	}
+}
+
+// Fill the language combo box and select the current language
+static void InitLanguageCombo(HWND hWnd)
+{
+	HWND hCombo = GetDlgItem(hWnd, IDC_LANGUAGE);
+	if (!hCombo)
+		return;
+
+	for (int i = 0; i < LANG_COUNT; i++)
+	{
+		const wchar_t* name = GetLangDisplayName((LANG_ID) i);
+		SendMessageW(hCombo, CB_ADDSTRING, 0, (LPARAM) name);
+	}
+	SendMessageW(hCombo, CB_SETCURSEL, (WPARAM) g_currentLang, 0);
+}
 
 // Our dialog Window message handler
 static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -312,20 +345,9 @@ static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 				}
 			}
 
-			if (isInstalled)
-			{
-				const wchar_t* uninstallStr = GetLangString(g_currentLang, STR_UNINSTALL);
-				SetDlgItemTextW(hWnd, IDC_INSTALL_UNINSTALL, uninstallStr);
-			}
-			else
-			{
-				const wchar_t* installStr = GetLangString(g_currentLang, STR_INSTALL);
-				SetDlgItemTextW(hWnd, IDC_INSTALL_UNINSTALL, installStr);
-			}
-			{
-				const wchar_t* refreshStr = GetLangString(g_currentLang, STR_REFRESH_WINDOW);
-				SetDlgItemTextW(hWnd, IDC_REFRESH, refreshStr);
-			}
+			// Apply language-dependent button texts and initialize language selector
+			ApplyLanguageTexts(hWnd);
+			InitLanguageCombo(hWnd);
 
 			return (INT_PTR) TRUE;
 		}
@@ -386,6 +408,22 @@ case IDC_INSTALL_UNINSTALL:
 				case IDC_REFRESH:
 				{
 					ResetWindowsIconCache();
+					return (INT_PTR) TRUE;
+				}
+				break;
+
+				// Language selector changed
+				case IDC_LANGUAGE:
+				{
+					if (HIWORD(wParam) == CBN_SELCHANGE)
+					{
+						LRESULT sel = SendMessageW((HWND)lParam, CB_GETCURSEL, 0, 0);
+						if (sel != CB_ERR && sel >= 0 && sel < LANG_COUNT)
+						{
+							g_currentLang = (LANG_ID) sel;
+							ApplyLanguageTexts(hWnd);
+						}
+					}
 					return (INT_PTR) TRUE;
 				}
 				break;
@@ -477,5 +515,5 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 		}
 	}
 
-	return (int) DialogBoxParamA(hInstance, (LPCSTR) IDD_MAIN, 0, &DlgProc, 0);
+	return (int) DialogBoxParamW(hInstance, (LPCWSTR) IDD_MAIN, 0, &DlgProc, 0);
 }

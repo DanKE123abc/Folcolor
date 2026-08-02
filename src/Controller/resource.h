@@ -11,6 +11,7 @@
 #define IDC_HYPERLINK                   1002
 #define IDC_SYSLINK1                    1003
 #define IDC_HYPLINK1                    1003
+#define IDC_LANGUAGE                    1004
 
 #define IDI_WIN10_1                     10001
 #define IDI_WIN10_2                     10002

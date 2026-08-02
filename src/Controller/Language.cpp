@@ -28,6 +28,23 @@ const wchar_t* GetColorName(LANG_ID lang, int colorIndex) {
 LANG_ID g_currentLang = LANG_EN;
 BOOL g_isWin11 = FALSE;
 
+// Language display names in their own language (order matches LANG_ID)
+static const wchar_t* langDisplayNames[LANG_COUNT] =
+{
+    L"English",
+    L"简体中文",
+    L"繁體中文",
+    L"日本語",
+    L"한국어",
+};
+
+const wchar_t* GetLangDisplayName(LANG_ID lang)
+{
+    if (lang < 0 || lang >= LANG_COUNT)
+        return langDisplayNames[LANG_EN];
+    return langDisplayNames[lang];
+}
+
 static const wchar_t* langStrings[LANG_COUNT][LANG_STRING_COUNT] =
 {
     {
