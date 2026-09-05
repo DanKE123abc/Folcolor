@@ -28,7 +28,6 @@ if ($old) {
 $cert = New-SelfSignedCertificate `
     -Type CodeSigningCert `
     -Subject "CN=Folcolor" `
-    -Publisher "CN=Folcolor" `
     -KeyAlgorithm RSA `
     -KeyLength 2048 `
     -CertStoreLocation $store `
