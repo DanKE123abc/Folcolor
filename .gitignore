@@ -9,5 +9,13 @@ README.md.backup
 Win32/
 *.aps
 
+# Win11 sparse-package build artifacts (generated, not committed)
+SparsePackage/Folcolor.pfx
+SparsePackage/Folcolor.cer
+SparsePackage/build/
+Win32/Release/Folcolor-sparse.appx
+Win32/Release/FolcolorMenu.dll
+Win32/Release/sparse-pkg/
+
 # PyCharm
 .idea/

@@ -1,0 +1,5 @@
+LIBRARY FolcolorMenu
+EXPORTS
+DllCanUnloadNow       PRIVATE
+DllGetClassObject     PRIVATE
+DllGetActivationFactory PRIVATE

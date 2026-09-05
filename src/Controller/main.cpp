@@ -15,6 +15,7 @@ int iconOffsetGlobal = WIN7_ICON_OFFSET;
 extern void Install();
 extern int Uninstall();
 extern BOOL HasInstallRegistry();
+extern BOOL g_isWin11;
 
 // ntdll.lib
 typedef long NTSTATUS;
@@ -491,7 +492,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 	if (nfo.dwMajorVersion >= 10)
 	{
 		if(nfo.dwBuildNumber >= 22000)
+		{
 			iconOffsetGlobal = WIN11_ICON_OFFSET;
+			g_isWin11 = TRUE;
+		}
 		else
 			iconOffsetGlobal = WIN10_ICON_OFFSET;
 	}

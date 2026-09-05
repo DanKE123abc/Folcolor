@@ -4,6 +4,7 @@
 #include "resource.h"
 #include "FolderColorize.h"
 #include "Language.h"
+#include "SparsePkg.h"
 extern WCHAR myPathGlobal[MAX_PATH];
 extern int iconOffsetGlobal;
 extern LANG_ID g_currentLang;
@@ -172,6 +173,19 @@ void Install()
 		CopyFileW(myPath, targetPath, FALSE);
 	}
 	InstallRegistry();
+	// Win11: also register the modern (new-style) context menu via the sparse
+	// identity package + IExplorerCommand. Failure here is non-fatal: the
+	// classic menu installed above still works.
+	if (g_isWin11)
+	{
+		if (!InstallSparsePkg())
+		{
+			MessageBoxW(NULL,
+				L"Folcolor could not register the Windows 11 new-style context menu.\n"
+				L"The classic context menu is still installed and works.",
+				L"Folcolor", (MB_OK | MB_ICONINFORMATION));
+		}
+	}
 	// Without this the app icon might not show up in explorer right away
 	ResetWindowsIconCache();
 }
@@ -183,6 +197,10 @@ int Uninstall()
 	DeleteRegistryPath(HKEY_CLASSES_ROOT, REGISTRY_PATH);
 	if (g_isWin11)
 		DeleteRegistryPath(HKEY_CURRENT_USER, REGISTRY_PATH_WIN11);
+	// Win11: unregister the sparse identity package first (must happen before
+	// the install folder is deleted because the package points at it).
+	if (g_isWin11)
+		UninstallSparsePkg();
 	ResetWindowsIconCache();
 	// Double check the path to avoid a disaster
 	if (wcsstr(myPathGlobal, INSTALL_FOLDER))

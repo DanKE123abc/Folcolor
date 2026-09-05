@@ -21,7 +21,18 @@ jobs:
     - name: Build Release
       run: |
         msbuild src/Controller/Controller.sln /p:Configuration=Release /p:Platform=x86 /p:PlatformToolset=v143
-        
+
+    - name: Build sparse package (Win11 context menu)
+      shell: pwsh
+      run: |
+        & "src/Controller/SparsePackage/build-sparse-pkg.ps1"
+        if (Test-Path "src/Controller/Win32/Release/Folcolor-sparse.appx") {
+          Write-Host "✅ Sparse package created"
+        } else {
+          Write-Host "❌ Sparse package build failed"
+          exit 1
+        }
+
     - name: Check build output
       run: |
         if (Test-Path "src/Controller/Win32/Release/Folcolor.exe") {
@@ -35,10 +46,14 @@ jobs:
           Get-ChildItem "src/Controller" -Directory | ForEach-Object { Write-Host $_.Name }
           exit 1
         }
-        
+
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Folcolor-exe
-        path: src/Controller/Win32/Release/Folcolor.exe
+        name: Folcolor-release
+        path: |
+          src/Controller/Win32/Release/Folcolor.exe
+          src/Controller/Win32/Release/FolcolorMenu.dll
+          src/Controller/Win32/Release/Folcolor-sparse.appx
+          src/Controller/SparsePackage/Folcolor.cer
         retention-days: 7
