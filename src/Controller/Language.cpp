@@ -63,6 +63,11 @@ static const wchar_t* langStrings[LANG_COUNT][LANG_STRING_COUNT] =
         L"Folcolor detects this as possibly a special folder (I.E. Downloads, Documents, Music, etc.) and is not supported since restoring them is complex.",
         L"If you really want to set the color/icon for this folder, manually edit or just delete the existing desktop.ini (hidden, system) file first.",
         L"Refresh Window icons",
+        L"Windows 11 menu: On",
+        L"Windows 11 menu: Off",
+        L"Windows 11 menu could not be registered. The classic menu is still available.",
+        L"Restart Explorer now to load the Windows 11 menu?",
+        L"Explorer could not be restarted automatically. Sign out and back in to load the menu.",
     },
     {
         L"文件夹颜色",
@@ -80,6 +85,11 @@ static const wchar_t* langStrings[LANG_COUNT][LANG_STRING_COUNT] =
         L"Folcolor 检测到这可能是一个特殊文件夹（例如下载、音乐、文档等），不受支持，因为恢复它们很复杂。",
         L"如果真的想为此文件夹设置颜色/图标，请先手动编辑或删除现有的 desktop.ini（隐藏、系统）文件。",
         L"刷新窗口图标",
+        L"Win11 菜单：开",
+        L"Win11 菜单：关",
+        L"Win11 新式菜单注册失败，经典菜单仍可使用。",
+        L"现在重启资源管理器以加载 Win11 新式菜单？",
+        L"无法自动重启资源管理器，请注销后重新登录以加载菜单。",
     },
     {
         L"資料夾彩色",
@@ -97,6 +107,11 @@ static const wchar_t* langStrings[LANG_COUNT][LANG_STRING_COUNT] =
         L"Folcolor 偵測到這可能是一個特殊資料夾（例如下載、音樂、文件等），不受支援，因為還原它們很複雜。",
         L"如果真的想為此資料夾設定顏色/圖示，請先手動編輯或刪除現有的 desktop.ini（隱藏、系統）檔案。",
         L"重新整理視窗圖示",
+        L"Win11 功能表：開",
+        L"Win11 功能表：關",
+        L"Win11 新式功能表註冊失敗，傳統功能表仍可使用。",
+        L"現在重新啟動檔案總管以載入 Win11 新式功能表？",
+        L"無法自動重新啟動檔案總管，請登出後重新登入以載入功能表。",
     },
     {
         L"カラーをフォルダ",
@@ -114,6 +129,11 @@ static const wchar_t* langStrings[LANG_COUNT][LANG_STRING_COUNT] =
         L"Folcolor は特殊フォルダ（ダウンロード、ドキュメント、音楽など）と判断する可能性があり、復元が複雑なためサポートされていません。",
         L"このフォルダに色/アイコンを設定する場合は、まず既存の desktop.ini（隠し、システム）ファイルを編集または削除してください。",
         L"ウィンドウアイコンを更新",
+        L"Windows 11 メニュー: オン",
+        L"Windows 11 メニュー: オフ",
+        L"Windows 11 のメニューを登録できませんでした。従来のメニューは引き続き使用できます。",
+        L"Windows 11 のメニューを読み込むため、エクスプローラーを再起動しますか？",
+        L"エクスプローラーを自動で再起動できませんでした。サインアウトして再サインインしてください。",
     },
     {
         L"색상 폴더",
@@ -131,6 +151,11 @@ static const wchar_t* langStrings[LANG_COUNT][LANG_STRING_COUNT] =
         L"Folcolor은 특수 폴더(예: 다운로드, 문서, 음악 등)로 감지되며 복원이 복잡하므로 지원되지 않습니다.",
         L"이 폴더에 색상/아이콘을 설정하려면 먼저 기존 desktop.ini(숨김, 시스템) 파일을 수동으로 편집하거나 삭제하세요.",
         L"창 아이콘 새로고침",
+        L"Windows 11 메뉴: 켜기",
+        L"Windows 11 메뉴: 끄기",
+        L"Windows 11 메뉴를 등록하지 못했습니다. 기존 메뉴는 계속 사용할 수 있습니다.",
+        L"Windows 11 메뉴를 불러오려면 지금 탐색기를 다시 시작할까요?",
+        L"탐색기를 자동으로 다시 시작하지 못했습니다. 로그아웃한 후 다시 로그인하세요.",
     }
 };
 

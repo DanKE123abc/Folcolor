@@ -6,6 +6,10 @@
 #include "resource.h"
 #include "FolderColorize.h"
 #include "Language.h"
+#include "SparsePkg.h"
+
+#include <string>
+#include <vector>
 
 #define APP_URL "http://www.folcolor.com/"
 
@@ -236,6 +240,15 @@ static void ApplyLanguageTexts(HWND hWnd)
 		const wchar_t* refreshStr = GetLangString(g_currentLang, STR_REFRESH_WINDOW);
 		SetDlgItemTextW(hWnd, IDC_REFRESH, refreshStr);
 	}
+	{
+		HWND hMenu = GetDlgItem(hWnd, IDC_WIN11MENU);
+		if (hMenu)
+		{
+			const wchar_t* menuStr = GetLangString(g_currentLang,
+				IsWin11MenuEnabled() ? STR_WIN11_MENU_ON : STR_WIN11_MENU_OFF);
+			SetWindowTextW(hMenu, menuStr);
+		}
+	}
 }
 
 // Fill the language combo box and select the current language
@@ -329,6 +342,7 @@ static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			}
 
 			// Tweak the button font too
+			HFONT buttonFont = NULL;
 			HFONT fontHandle = (HFONT) SendMessage(GetDlgItem(hWnd, IDC_INSTALL_UNINSTALL), WM_GETFONT, 0, 0);
 			if (!fontHandle)
 				fontHandle = (HFONT) GetStockObject(DEFAULT_GUI_FONT);
@@ -340,10 +354,26 @@ static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 					// Emphasized font
 					lf.lfHeight = 14;
 					lf.lfWeight = FW_MEDIUM;
-					HFONT buttonFont = CreateFontIndirect(&lf);
-					SendMessageA(GetDlgItem(hWnd, IDC_INSTALL_UNINSTALL), WM_SETFONT, WPARAM(buttonFont), TRUE);
-					SendMessageA(GetDlgItem(hWnd, IDC_REFRESH), WM_SETFONT, WPARAM(buttonFont), TRUE);
+					buttonFont = CreateFontIndirect(&lf);
+					if (buttonFont)
+					{
+						SendMessageA(GetDlgItem(hWnd, IDC_INSTALL_UNINSTALL), WM_SETFONT, WPARAM(buttonFont), TRUE);
+						SendMessageA(GetDlgItem(hWnd, IDC_REFRESH), WM_SETFONT, WPARAM(buttonFont), TRUE);
+					}
 				}
+			}
+
+			// Windows 11 modern-menu toggle. Created dynamically so the dialog
+			// resource does not need a new control (and stays easy to hide on
+			// Windows 10).
+			if (g_isWin11 && isInstalled)
+			{
+				HWND hMenu = CreateWindowExW(0, L"BUTTON", L"",
+					WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON | BS_FLAT,
+					9, 66, 182, 14, hWnd, (HMENU)IDC_WIN11MENU,
+					GetModuleHandleW(NULL), NULL);
+				if (hMenu && buttonFont)
+					SendMessageW(hMenu, WM_SETFONT, (WPARAM)buttonFont, TRUE);
 			}
 
 			// Apply language-dependent button texts and initialize language selector
@@ -405,6 +435,33 @@ case IDC_INSTALL_UNINSTALL:
 			}
 				break;
 
+				// Toggle the Windows 11 modern context menu
+				case IDC_WIN11MENU:
+				{
+					BOOL enable = !IsWin11MenuEnabled();
+					BOOL ok = enable ? InstallSparsePkg() : UninstallSparsePkg();
+					if (!ok)
+					{
+						wchar_t message[768];
+						swprintf_s(message, _countof(message), L"%s\n\n%s",
+							GetLangString(g_currentLang, STR_WIN11_MENU_FAIL), GetMenuLogPath());
+						MessageBoxW(hWnd, message, PROJECT_NAME_W, (MB_OK | MB_ICONWARNING));
+					}
+					else
+					{
+						SetWin11MenuEnabled(enable);
+						HWND hMenu = GetDlgItem(hWnd, IDC_WIN11MENU);
+						if (hMenu)
+						{
+							SetWindowTextW(hMenu, GetLangString(g_currentLang,
+								enable ? STR_WIN11_MENU_ON : STR_WIN11_MENU_OFF));
+						}
+						PromptRestartExplorer(hWnd);
+					}
+					return (INT_PTR) TRUE;
+				}
+				break;
+
 				// Refresh Windows icon cache DB
 				case IDC_REFRESH:
 				{
@@ -462,14 +519,66 @@ case IDC_INSTALL_UNINSTALL:
 }
 
 
+struct MenuCommandLine
+{
+	BOOL installMenu;
+	BOOL uninstallMenu;
+	int colorIndex;
+	std::vector<std::wstring> folders;
+
+	MenuCommandLine() : installMenu(FALSE), uninstallMenu(FALSE), colorIndex(-1) {}
+};
+
+// Parses the arguments produced by the classic registry verbs and by the
+// Windows 11 MenuDLL. Both "--folder=<path>" and "--folder <path>" are
+// accepted, and a legacy unquoted path containing spaces is reassembled from
+// the tokens Windows split it into.
+static void ParseMenuCommandLine(MenuCommandLine& parsed)
+{
+	int argc = 0;
+	LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+	if (!argv)
+		return;
+
+	for (int i = 1; i < argc; i++)
+	{
+		const wchar_t* arg = argv[i];
+
+		if (wcscmp(arg, L"--install-menu") == 0)
+			parsed.installMenu = TRUE;
+		else if (wcscmp(arg, L"--uninstall-menu") == 0)
+			parsed.uninstallMenu = TRUE;
+		else if (wcsncmp(arg, L"--index=", 8) == 0)
+			parsed.colorIndex = _wtoi(arg + 8);
+		else if (wcscmp(arg, L"--index") == 0 && (i + 1) < argc)
+			parsed.colorIndex = _wtoi(argv[++i]);
+		else if (wcsncmp(arg, L"--folder=", 9) == 0)
+		{
+			std::wstring folder(arg + 9);
+			while (((i + 1) < argc) && (wcsncmp(argv[i + 1], L"--", 2) != 0))
+			{
+				folder += L' ';
+				folder += argv[++i];
+			}
+			parsed.folders.push_back(folder);
+		}
+		else if (wcscmp(arg, L"--folder") == 0 && (i + 1) < argc)
+		{
+			parsed.folders.push_back(argv[++i]);
+		}
+	}
+
+	LocalFree(argv);
+}
+
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
+	(void) hPrevInstance;
+	(void) pCmdLine;
+	(void) nCmdShow;
+
 	// Detect system language first
 	g_currentLang = DetectSystemLanguage();
-
-	// Should only be one instance running
-	if(FindDoppelganger())
-		return EXIT_FAILURE;
 
 	// Our path from "%ProgramFiles(x86)%" base
 	C_ASSERT(_countof(myPathGlobal) >= MAX_PATH);
@@ -479,19 +588,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 	if (wcscat_s(myPathGlobal, _countof(myPathGlobal), L"\\" INSTALL_FOLDER L"\\") != 0)
 		CRITICAL("Path size limit error!");
 
-	// We're installed?
-	// Have registry?
-	isInstalled = HasInstallRegistry();
-	// Or has install folder?
-	DWORD attr = GetFileAttributesW(myPathGlobal);
-	isInstalled |= ((attr != INVALID_FILE_ATTRIBUTES) && (attr & FILE_ATTRIBUTE_DIRECTORY));
-	
 	// Icon resource set index per OS version
-	OSVERSIONINFOA nfo = { sizeof(OSVERSIONINFOA), 0,0,0};
-	RtlGetVersion((PRTL_OSVERSIONINFOEXW) &nfo);
-	if (nfo.dwMajorVersion >= 10)
+	OSVERSIONINFOEXW versionInfo = {};
+	versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
+	RtlGetVersion((PRTL_OSVERSIONINFOEXW) &versionInfo);
+	if (versionInfo.dwMajorVersion >= 10)
 	{
-		if(nfo.dwBuildNumber >= 22000)
+		if (versionInfo.dwBuildNumber >= 22000)
 		{
 			iconOffsetGlobal = WIN11_ICON_OFFSET;
 			g_isWin11 = TRUE;
@@ -499,25 +602,43 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 		else
 			iconOffsetGlobal = WIN10_ICON_OFFSET;
 	}
-	
-	// We're passed an icon index argument?
-	if (isInstalled)
-	{
-		if(pCmdLine && (wcslen(pCmdLine) > 0))
-		{
-			// Yes, get passed color index
-			LPWSTR indexPtr = wcsstr(pCmdLine, L"" COMMAND_ICON);
-			if (indexPtr)
-			{
-				// Passed folder path			
-				LPWSTR folderPtr = wcsstr(pCmdLine, L"" COMMAND_FOLDER);				
-				if(folderPtr)
-					SetFolderColor(_wtoi(&indexPtr[SIZESTR(COMMAND_ICON)]), &folderPtr[SIZESTR(COMMAND_FOLDER)]);
-			}
 
-			return EXIT_SUCCESS;
-		}
+	MenuCommandLine commandLine;
+	ParseMenuCommandLine(commandLine);
+
+	// Hidden helper modes used when the elevated installer has to register the
+	// per-user package in the signed-in user's context.
+	if (commandLine.installMenu || commandLine.uninstallMenu)
+	{
+		BOOL ok = commandLine.installMenu ? RegisterMenuForCurrentUser()
+		                                  : UnregisterMenuForCurrentUser();
+		return ok ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
+
+	// We're installed? Have registry, or have install folder?
+	isInstalled = HasInstallRegistry();
+	DWORD attr = GetFileAttributesW(myPathGlobal);
+	isInstalled |= ((attr != INVALID_FILE_ATTRIBUTES) && (attr & FILE_ATTRIBUTE_DIRECTORY));
+
+	// Context-menu action: one process handles every selected folder. The
+	// single-instance check below is intentionally skipped here so a menu
+	// click still works while the main dialog is open.
+	if ((commandLine.colorIndex >= 0) && !commandLine.folders.empty())
+	{
+		if (isInstalled)
+		{
+			for (size_t i = 0; i < commandLine.folders.size(); i++)
+			{
+				SetFolderColor(commandLine.colorIndex,
+					const_cast<LPWSTR>(commandLine.folders[i].c_str()));
+			}
+		}
+		return EXIT_SUCCESS;
+	}
+
+	// Should only be one instance running
+	if (FindDoppelganger())
+		return EXIT_FAILURE;
 
 	return (int) DialogBoxParamW(hInstance, (LPCWSTR) IDD_MAIN, 0, &DlgProc, 0);
 }

@@ -35,8 +35,13 @@ const wchar_t* GetLangDisplayName(LANG_ID lang);
 #define STR_SPECIAL_FOLDER 12
 #define STR_MANUAL_EDIT 13
 #define STR_REFRESH_WINDOW 14
+#define STR_WIN11_MENU_ON 15
+#define STR_WIN11_MENU_OFF 16
+#define STR_WIN11_MENU_FAIL 17
+#define STR_RESTART_EXPLORER 18
+#define STR_RESTART_FAILED 19
 
-#define LANG_STRING_COUNT 15
+#define LANG_STRING_COUNT 20
 
 // Color label count
 #define COLOR_LABEL_COUNT 15

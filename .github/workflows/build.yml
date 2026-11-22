@@ -10,42 +10,62 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
-      
-    - name: Build Release
+
+    - name: Build app (x86)
       run: |
         msbuild src/Controller/Controller.sln /p:Configuration=Release /p:Platform=x86 /p:PlatformToolset=v143
 
+    - name: Build Win11 menu DLL (x64)
+      run: |
+        msbuild src/Controller/MenuDLL/MenuDLL.vcxproj /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143
+
+    # ARM64 is optional: the x64 DLL is enough for x64 Windows 11, and the
+    # package simply omits the ARM64 file when the toolset is unavailable.
+    - name: Build Win11 menu DLL (ARM64, optional)
+      continue-on-error: true
+      run: |
+        msbuild src/Controller/MenuDLL/MenuDLL.vcxproj /p:Configuration=Release /p:Platform=ARM64 /p:PlatformToolset=v143
+
     - name: Build sparse package (Win11 context menu)
       shell: pwsh
+      env:
+        FOLCOLOR_PFX_BASE64: ${{ secrets.FOLCOLOR_PFX_BASE64 }}
+        FOLCOLOR_PFX_PASSWORD: ${{ secrets.FOLCOLOR_PFX_PASSWORD }}
       run: |
-        & "src/Controller/SparsePackage/build-sparse-pkg.ps1"
+        & "src/Controller/SparsePackage/build-sparse-pkg.ps1" -Version "1.2.0.0"
         if (Test-Path "src/Controller/Win32/Release/Folcolor-sparse.appx") {
-          Write-Host "✅ Sparse package created"
+          Write-Host "Sparse package created"
         } else {
-          Write-Host "❌ Sparse package build failed"
+          Write-Host "Sparse package build failed"
           exit 1
         }
 
-    - name: Check build output
+    - name: Create release bundle
+      shell: pwsh
       run: |
-        if (Test-Path "src/Controller/Win32/Release/Folcolor.exe") {
-          Write-Host "✅ Build successful - Folcolor.exe created"
-          Get-ChildItem "src/Controller/Win32/Release/Folcolor.exe" | Format-List Name, Length, LastWriteTime
-        } else {
-          Write-Host "❌ Build failed - Folcolor.exe not found"
-          Write-Host "Checking available files in output directory:"
+        $release = "src/Controller/Win32/Release"
+        if (-not (Test-Path "$release/Folcolor.exe")) {
           Get-ChildItem "src/Controller" -Recurse -Name "*.exe" -ErrorAction SilentlyContinue
-          Write-Host "Checking all directories:"
-          Get-ChildItem "src/Controller" -Directory | ForEach-Object { Write-Host $_.Name }
           exit 1
         }
+        $files = @(
+          "$release/Folcolor.exe",
+          "$release/FolcolorMenu.x64.dll",
+          "$release/FolcolorMenu.x86.dll",
+          "$release/FolcolorMenu.arm64.dll",
+          "$release/Folcolor-sparse.appx",
+          "$release/Folcolor.cer",
+          "$release/menu.ps1"
+        ) | Where-Object { Test-Path $_ }
+        Compress-Archive -Path $files -DestinationPath "$release/Folcolor-win11.zip" -Force
+        Get-ChildItem $release | Format-Table Name, Length
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
@@ -53,7 +73,11 @@ jobs:
         name: Folcolor-release
         path: |
           src/Controller/Win32/Release/Folcolor.exe
-          src/Controller/Win32/Release/FolcolorMenu.dll
+          src/Controller/Win32/Release/FolcolorMenu.x64.dll
+          src/Controller/Win32/Release/FolcolorMenu.x86.dll
+          src/Controller/Win32/Release/FolcolorMenu.arm64.dll
           src/Controller/Win32/Release/Folcolor-sparse.appx
-          src/Controller/SparsePackage/Folcolor.cer
+          src/Controller/Win32/Release/Folcolor.cer
+          src/Controller/Win32/Release/menu.ps1
+          src/Controller/Win32/Release/Folcolor-win11.zip
         retention-days: 7

@@ -11,13 +11,16 @@
   xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
   xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
   IgnorableNamespaces="uap uap2 uap3 rescap desktop desktop4 desktop5 uap10 com">
-  <Identity Name="Folcolor" ProcessorArchitecture="neutral" Publisher="CN=Folcolor" Version="1.0.0.0" />
+  <Identity Name="Folcolor" ProcessorArchitecture="neutral" Publisher="CN=Folcolor" Version="1.2.0.0" />
   <Properties>
     <DisplayName>Folcolor</DisplayName>
     <PublisherDisplayName>Folcolor</PublisherDisplayName>
     <Logo>icon.png</Logo>
     <uap10:AllowExternalContent>true</uap10:AllowExternalContent>
   </Properties>
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
   <Dependencies>
     <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
   </Dependencies>
@@ -32,10 +35,10 @@
       <Extensions>
         <desktop4:Extension Category="windows.fileExplorerContextMenus">
           <desktop4:FileExplorerContextMenus>
+            <!-- Folder-only for now: right-clicking the folder background is
+                 deliberately not registered (it would need an IFolderView
+                 lookup to resolve the current directory). -->
             <desktop5:ItemType Type="Directory">
-              <desktop5:Verb Id="ColorFolder" Clsid="6D3B1C8E-9A14-4C7E-B1F0-5A2C3D4E5F60" />
-            </desktop5:ItemType>
-            <desktop5:ItemType Type="Directory\Background">
               <desktop5:Verb Id="ColorFolder" Clsid="6D3B1C8E-9A14-4C7E-B1F0-5A2C3D4E5F60" />
             </desktop5:ItemType>
           </desktop4:FileExplorerContextMenus>

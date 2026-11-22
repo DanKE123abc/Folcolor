@@ -35,6 +35,65 @@ using Microsoft::WRL::ClassicCom;
 
 static HMODULE g_module = NULL;
 
+// The parent command owns the CLSID above. The 16 child commands derive a
+// stable canonical name from it (last byte 0x61..0x70) so Explorer can tell
+// them apart; the parent keeps 0x60.
+static const GUID kFolcolorCommandGuid =
+{ 0x6d3b1c8e, 0x9a14, 0x4c7e, { 0xb1, 0xf0, 0x5a, 0x2c, 0x3d, 0x4e, 0x5f, 0x60 } };
+
+static GUID MakeSubCommandGuid(int subIndex)
+{
+    GUID guid = kFolcolorCommandGuid;
+    guid.Data4[7] = (BYTE)(0x61 + (subIndex & 0x0F));
+    return guid;
+}
+
+// Only show the command when Explorer actually passed a selection. This is
+// also what keeps the DLL out of the "background" context (we do not register
+// a Directory\Background item for the modern menu).
+static EXPCMDSTATE StateForSelection(_In_opt_ IShellItemArray* selection)
+{
+    if (!selection)
+        return ECS_HIDDEN;
+
+    DWORD count = 0;
+    if (FAILED(selection->GetCount(&count)) || count == 0)
+        return ECS_HIDDEN;
+
+    return ECS_ENABLED;
+}
+
+// CommandLineToArgvW treats a backslash before the closing quote as an
+// escape, so double a trailing backslash (drive roots such as C:\) before
+// quoting.
+static std::wstring QuoteArgument(const std::wstring& value)
+{
+    std::wstring quoted = L"\"";
+    quoted += value;
+    if (!value.empty() && value.back() == L'\\')
+        quoted += L'\\';
+    quoted += L"\"";
+    return quoted;
+}
+
+static BOOL LaunchCommandLine(const std::wstring& commandLine)
+{
+    std::wstring mutableCommandLine = commandLine;
+    if (mutableCommandLine.empty())
+        return FALSE;
+
+    STARTUPINFOW si = {};
+    si.cb = sizeof(si);
+    PROCESS_INFORMATION pi = {};
+    BOOL created = ::CreateProcessW(nullptr, &mutableCommandLine[0], nullptr, nullptr,
+                                   FALSE, 0, nullptr, nullptr, &si, &pi);
+    if (pi.hProcess)
+        ::CloseHandle(pi.hProcess);
+    if (pi.hThread)
+        ::CloseHandle(pi.hThread);
+    return created;
+}
+
 namespace
 {
     // Directory that holds this DLL (== install dir where Folcolor.exe lives).
@@ -116,64 +175,76 @@ public:
 
     IFACEMETHODIMP GetCanonicalName(_Out_ GUID* guidCommandName)
     {
-        *guidCommandName = GUID_NULL;
+        *guidCommandName = MakeSubCommandGuid(m_subIndex);
         return S_OK;
     }
 
     IFACEMETHODIMP GetState(_In_opt_ IShellItemArray* selection, _In_ BOOL okToBeSlow, _Out_ EXPCMDSTATE* cmdState)
     {
-        (void)selection; (void)okToBeSlow;
+        (void)selection;
+        (void)okToBeSlow;
+        // The parent command gates the whole flyout; keeping the children
+        // enabled avoids an empty submenu if Explorer queries them with no
+        // selection array.
         *cmdState = ECS_ENABLED;
         return S_OK;
     }
 
     IFACEMETHODIMP Invoke(_In_opt_ IShellItemArray* selection, _In_opt_ IBindCtx*) noexcept
     {
-        std::wstring exe = GetExePath();
-        std::wstring templateCmd;
-        if (m_subIndex <= COLOR_ICON_COUNT)
+        const std::wstring exe = GetExePath();
+
+        // "Launch Folcolor" does not need a selection.
+        if (m_subIndex > COLOR_ICON_COUNT)
         {
-            // Color / Restore pass the selected folder into Folcolor.exe.
-            WCHAR idx[16];
-            swprintf_s(idx, _countof(idx), L"%d", m_subIndex);
-            templateCmd = L"\"" + exe + L"\" " L"--index=" + std::wstring(idx) + L" " L"--folder=\"" L"%1" L"\"";
+            LaunchCommandLine(L"\"" + exe + L"\"");
+            return S_OK;
+        }
+
+        if (!selection)
+            return S_OK;
+
+        DWORD count = 0;
+        if (FAILED(selection->GetCount(&count)) || count == 0)
+            return S_OK;
+
+        // Color / Restore: collect every selected folder and hand them to a
+        // single Folcolor.exe process. This avoids the old one-process-per-item
+        // race where each copy saw the others as a duplicate instance.
+        std::vector<std::wstring> folders;
+        folders.reserve(count);
+        for (DWORD i = 0; i < count; ++i)
+        {
+            ComPtr<IShellItem> psi;
+            if (FAILED(selection->GetItemAt(i, &psi)))
+                continue;
+            PWSTR itemName = nullptr;
+            if (FAILED(psi->GetDisplayName(SIGDN_FILESYSPATH, &itemName)))
+                continue;
+            folders.push_back(itemName);
+            ::CoTaskMemFree(itemName);
+        }
+
+        if (folders.empty())
+            return S_OK;
+
+        std::wstring commandLine = L"\"" + exe + L"\" --index=" + std::to_wstring(m_subIndex);
+        for (size_t i = 0; i < folders.size(); ++i)
+            commandLine += L" --folder=" + QuoteArgument(folders[i]);
+
+        // CreateProcess rejects command lines longer than 32767 characters.
+        // Fall back to one process per folder for very large selections.
+        if (commandLine.size() > 30000)
+        {
+            const std::wstring prefix = L"\"" + exe + L"\" --index=" + std::to_wstring(m_subIndex);
+            for (size_t i = 0; i < folders.size(); ++i)
+                LaunchCommandLine(prefix + L" --folder=" + QuoteArgument(folders[i]));
         }
         else
         {
-            templateCmd = L"\"" + exe + L"\"";
+            LaunchCommandLine(commandLine);
         }
 
-        if (selection)
-        {
-            DWORD count = 0;
-            if (FAILED(selection->GetCount(&count)))
-                return E_FAIL;
-            for (DWORD i = 0; i < count; ++i)
-            {
-                ComPtr<IShellItem> psi;
-                if (FAILED(selection->GetItemAt(i, &psi)))
-                    continue;
-                PWSTR itemName = nullptr;
-                if (FAILED(psi->GetDisplayName(SIGDN_FILESYSPATH, &itemName)))
-                    continue;
-
-                std::wstring cmdline = templateCmd;
-                std::wstring::size_type pos = cmdline.find(L"%1");
-                if (pos != std::wstring::npos)
-                    cmdline.replace(pos, 2, itemName);
-
-                STARTUPINFOW si = {};
-                si.cb = sizeof(si);
-                PROCESS_INFORMATION pi = {};
-                ::CreateProcessW(nullptr, &cmdline[0], nullptr, nullptr, FALSE, 0, nullptr, nullptr, &si, &pi);
-                if (pi.hProcess)
-                {
-                    ::CloseHandle(pi.hProcess);
-                    ::CloseHandle(pi.hThread);
-                }
-                ::CoTaskMemFree(itemName);
-            }
-        }
         return S_OK;
     }
 
@@ -295,14 +366,14 @@ public:
 
     IFACEMETHODIMP GetCanonicalName(_Out_ GUID* guidCommandName)
     {
-        *guidCommandName = GUID_NULL;
+        *guidCommandName = kFolcolorCommandGuid;
         return S_OK;
     }
 
     IFACEMETHODIMP GetState(_In_opt_ IShellItemArray* selection, _In_ BOOL okToBeSlow, _Out_ EXPCMDSTATE* cmdState)
     {
-        (void)selection; (void)okToBeSlow;
-        *cmdState = ECS_ENABLED;
+        (void)okToBeSlow;
+        *cmdState = StateForSelection(selection);
         return S_OK;
     }
 

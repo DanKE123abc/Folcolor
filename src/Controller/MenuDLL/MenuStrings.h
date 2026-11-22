@@ -5,6 +5,7 @@
 // Kept deliberately isolated (no dependency on Language.cpp) so the DLL is the
 // single binary that owns display strings for the modern context menu.
 #pragma once
+
 #include <windows.h>
 
 // Language index order MUST match LANG_ID in Language.h.

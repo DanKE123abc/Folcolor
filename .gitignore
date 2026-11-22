@@ -19,3 +19,8 @@ Win32/Release/sparse-pkg/
 
 # PyCharm
 .idea/
+
+# Win11 menu DLL build outputs for the extra architectures
+x64/
+ARM64/
+*.zip

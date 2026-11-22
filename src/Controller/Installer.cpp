@@ -176,14 +176,18 @@ void Install()
 	// Win11: also register the modern (new-style) context menu via the sparse
 	// identity package + IExplorerCommand. Failure here is non-fatal: the
 	// classic menu installed above still works.
-	if (g_isWin11)
+	if (g_isWin11 && IsWin11MenuEnabled())
 	{
 		if (!InstallSparsePkg())
 		{
-			MessageBoxW(NULL,
-				L"Folcolor could not register the Windows 11 new-style context menu.\n"
-				L"The classic context menu is still installed and works.",
-				L"Folcolor", (MB_OK | MB_ICONINFORMATION));
+			wchar_t message[768];
+			swprintf_s(message, _countof(message), L"%s\n\n%s",
+				GetLangString(g_currentLang, STR_WIN11_MENU_FAIL), GetMenuLogPath());
+			MessageBoxW(NULL, message, PROJECT_NAME_W, (MB_OK | MB_ICONINFORMATION));
+		}
+		else
+		{
+			PromptRestartExplorer(NULL);
 		}
 	}
 	// Without this the app icon might not show up in explorer right away
