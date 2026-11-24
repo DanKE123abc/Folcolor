@@ -1,4 +1,4 @@
-# Folcolor (c) 2020 Kevin Weatherman - MIT license
+﻿# Folcolor (c) 2020 Kevin Weatherman - MIT license
 #
 # Generates the self-signed code-signing certificate used to sign the
 # Win11 sparse package (Folcolor-sparse.appx). Run once; the output
@@ -26,11 +26,15 @@ if ($old) {
 }
 
 $cert = New-SelfSignedCertificate `
-    -Type CodeSigningCert `
+    -Type Custom `
+    -KeyUsage DigitalSignature `
+    -CertStoreLocation $store `
+    -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3", "2.5.29.19={text}") `
     -Subject "CN=Folcolor" `
+    -FriendlyName "Folcolor Sparse Package" `
+    -KeyExportPolicy Exportable `
     -KeyAlgorithm RSA `
     -KeyLength 2048 `
-    -CertStoreLocation $store `
     -NotAfter (Get-Date).AddYears(5)
 
 $password = ConvertTo-SecureString -String $pfxPass -Force -AsPlainText

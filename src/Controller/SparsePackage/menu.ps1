@@ -1,5 +1,5 @@
-param(
-    [Parameter(Mandatory=$true)][ValidateSet('install','uninstall','cleanup')][string]$Mode,
+﻿param(
+    [Parameter(Mandatory=$true)][ValidateSet('trust','install','uninstall','cleanup')][string]$Mode,
     [string]$Appx = '',
     [string]$Cer = '',
     [string]$External = '',
@@ -71,16 +71,23 @@ switch ($Mode) {
         Remove-TrustedCert 'LocalMachine'
         exit 0
     }
+    'trust' {
+        # Add-AppxPackage validates the signature in the machine-scoped AppX
+        # deployment service, which does not see the per-user TrustedPeople
+        # store. Trust the signing certificate machine-wide (requires admin).
+        try {
+            Remove-TrustedCert 'LocalMachine'
+            Import-Certificate -FilePath $Cer -CertStoreLocation 'Cert:\LocalMachine\TrustedPeople' | Out-Null
+            Write-MenuLog 'machine certificate trusted'
+        } catch {
+            Write-MenuLog ('machine certificate import failed: ' + $_.Exception.Message)
+            exit 4
+        }
+        exit 0
+    }
     'install' {
         Remove-UserRegistration
         Remove-TrustedCert 'CurrentUser'
-        try {
-            Import-Certificate -FilePath $Cer -CertStoreLocation 'Cert:\CurrentUser\TrustedPeople' | Out-Null
-            Write-MenuLog 'certificate imported'
-        } catch {
-            Write-MenuLog ('certificate import failed: ' + $_.Exception.Message)
-            exit 2
-        }
         try {
             Add-AppxPackage -Path $Appx -ExternalLocation $External -ErrorAction Stop
             Write-MenuLog 'package registered'

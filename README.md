@@ -54,9 +54,13 @@ plus an out-of-process `IExplorerCommand` DLL, which gives you:
 * The classic registry menu stays installed as a fallback and appears under
   **Show more options** (or Shift+F10).
 
-The modern menu is registered **per user**:
+The identity package is registered **per user**, while the signing certificate
+is trusted **machine-wide**:
 
-* `Folcolor.cer` is trusted in the current user's `TrustedPeople` store.
+* `Folcolor.cer` is imported into `Cert:\LocalMachine\TrustedPeople`. AppX
+  signature validation runs in the machine-scoped AppX deployment service and
+  cannot see a per-user `TrustedPeople` store, so a user-scoped certificate is
+  not enough.
 * The package is registered with `Add-AppxPackage -ExternalLocation`.
 * If Folcolor is elevated as a different account than the signed-in user, the
   installer delegates registration to a helper process running with the shell

@@ -3,11 +3,13 @@
 //
 // Windows 11 sparse-package registration for the modern context menu.
 //
-// The identity package is per-user: Folcolor.cer is trusted in the signed-in
-// user's TrustedPeople store and the package is registered with
-// Add-AppxPackage -ExternalLocation. Folcolor.exe requires administrator, so
-// when it is elevated as a different account than the shell user, the work is
-// delegated to a helper process running with the shell user's token.
+// The identity package is registered per user with Add-AppxPackage
+// -ExternalLocation. The signing certificate is trusted machine-wide
+// (LocalMachine\TrustedPeople): AppX signature validation runs in the
+// machine-scoped AppX deployment service and cannot see a user's store.
+// Folcolor.exe requires administrator, so when it is elevated as a different
+// account than the shell user, registration is delegated to a helper process
+// running with the shell user's token.
 //
 // Registration is best-effort: if anything fails the classic context menu is
 // still installed and fully functional.
@@ -389,6 +391,12 @@ BOOL InstallSparsePkg()
     // Clear registrations left behind by older builds (per-machine and
     // per-user). This is best-effort and needs the elevation we already have.
     RunMenuScript(L"cleanup", TRUE);
+
+    // Add-AppxPackage validates the signature in the machine-scoped AppX
+    // deployment service, which only sees LocalMachine\TrustedPeople (a
+    // CurrentUser store is invisible to it). This needs our elevation.
+    if (!RunMenuScript(L"trust", TRUE))
+        return FALSE;
 
     if (!IsShellUserSameAsCurrent())
     {

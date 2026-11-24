@@ -69,9 +69,10 @@ zip).
   Windows) and `HKCU\Software\Classes\Directory\Background\shell\Folcolor`
   (Win11 background)
 - On Win11 also copies `FolcolorMenu.dll` (matching machine architecture),
-  `Folcolor-sparse.appx` and `Folcolor.cer` next to the exe, then registers the
-  sparse identity package **per user**:
-  - `Folcolor.cer` → `Cert:\CurrentUser\TrustedPeople`
+  `Folcolor-sparse.appx`, `Folcolor.cer` and `menu.ps1` next to the exe, then
+  registers the sparse identity package **per user**:
+  - `Folcolor.cer` → `Cert:\LocalMachine\TrustedPeople` (machine-wide; AppX
+    signature validation runs in the machine-scoped service)
   - `Add-AppxPackage -ExternalLocation <install dir>`
   - when the process is elevated as a different account than the shell user,
     registration is delegated to `Folcolor.exe --install-menu` running with the
@@ -108,3 +109,6 @@ uploads the full release bundle.
   (the Win11 menu DLL and sparse-package code use `std::wstring`/`std::vector`)
 - `StdAfx.h` is a manual include hub (not PCH) — add shared includes there
 - `resource.h` and `.rc` files define UI layout; resource IDs prefixed with `IDC_` / `IDI_` / `IDD_`
+- C++ sources with non-ASCII text are UTF-8. Both projects compile with `/utf-8`;
+  `MenuStrings.h` also carries a UTF-8 BOM so CI runners with an English code page
+  cannot turn menu labels into mojibake.

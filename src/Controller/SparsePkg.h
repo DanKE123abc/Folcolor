@@ -1,4 +1,4 @@
-// Folcolor(tm) (c) 2020 Kevin Weatherman
+﻿// Folcolor(tm) (c) 2020 Kevin Weatherman
 // MIT license https://opensource.org/licenses/MIT
 #pragma once
 
@@ -7,11 +7,12 @@
 // Windows 11 only: register/unregister the sparse (identity) package that
 // surfaces Folcolor's modern context menu via IExplorerCommand.
 //
-// The modern menu is a per-user integration: the identity package is
-// registered for the signed-in user and the self-signed certificate is
-// trusted in that user's TrustedPeople store. When Folcolor runs elevated as
-// a different account than the signed-in user, the registration is delegated
-// to a helper process running with the shell user's token.
+// The identity package is registered per user. The signing certificate is
+// trusted machine-wide (LocalMachine\TrustedPeople) because AppX signature
+// validation runs in the machine-scoped AppX deployment service and cannot
+// see a user's TrustedPeople store. When Folcolor runs elevated as a
+// different account than the signed-in user, registration is delegated to a
+// helper process running with the shell user's token.
 
 BOOL IsWin11MenuSupported();
 BOOL IsWin11MenuEnabled();

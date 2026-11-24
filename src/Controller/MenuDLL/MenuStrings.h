@@ -1,4 +1,4 @@
-// Folcolor(tm) (c) 2020 Kevin Weatherman
+﻿// Folcolor(tm) (c) 2020 Kevin Weatherman
 // MIT license https://opensource.org/licenses/MIT
 //
 // Self-contained string table for the Win11 sparse-package context menu DLL.
