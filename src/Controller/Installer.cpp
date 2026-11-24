@@ -1,6 +1,8 @@
 // Folcolor(rm) (c) 2020 Kevin Weatherman
 // MIT license https://opensource.org/licenses/MIT
 #include "StdAfx.h"
+#include <string.h>
+#include <wchar.h>
 #include "resource.h"
 #include "FolderColorize.h"
 #include "Language.h"
@@ -148,9 +150,15 @@ static void InstallRegistry()
 // Install ourself
 void Install()
 {
-	// Create installation folder
+	// Create installation folder. A leftover folder without our registry keys
+	// (for example after a partial uninstall) is perfectly fine: the files are
+	// overwritten below.
 	if (!CreateDirectoryW(myPathGlobal, NULL))
-		CRITICAL_API_FAIL(CreateDirectoryW, GetLastError());
+	{
+		DWORD error = GetLastError();
+		if (error != ERROR_ALREADY_EXISTS)
+			CRITICAL_API_FAIL(CreateDirectoryW, error);
+	}
 	// Copy ourself there
 	WCHAR myPath[MAX_PATH];
 	if (!GetModuleFileNameW(NULL, myPath, _countof(myPath)))
@@ -161,16 +169,21 @@ void Install()
 	WCHAR targetPath[MAX_PATH];
 	if (_snwprintf_s(targetPath, _countof(targetPath), _countof(targetPath) - 1, L"%s%s", myPathGlobal, myName) < 1)
 		CRITICAL("Path size limit error!");
-	if (!CopyFileW(myPath, targetPath, FALSE))
-		CRITICAL_API_FAIL(CopyFileW, GetLastError());
+	// Running the installed copy means source == target; CopyFile would fail.
+	if (_wcsicmp(myPath, targetPath) != 0)
+	{
+		if (!CopyFileW(myPath, targetPath, FALSE))
+			CRITICAL_API_FAIL(CopyFileW, GetLastError());
+	}
 	// And "README.md" file if it exists
 	if (PathRemoveFileSpecW(myPath))
 	{
 		if (wcscat_s(myPath, _countof(myPath), L"\\README.md") != 0)
 			CRITICAL("Path size limit error!");
-		if (_snwprintf_s(targetPath, _countof(targetPath), _countof(targetPath) - 1, L"%s README.md", myPathGlobal) < 1)
+		if (_snwprintf_s(targetPath, _countof(targetPath), _countof(targetPath) - 1, L"%sREADME.md", myPathGlobal) < 1)
 			CRITICAL("Path size limit error!");
-		CopyFileW(myPath, targetPath, FALSE);
+		if ((_wcsicmp(myPath, targetPath) != 0) && (GetFileAttributesW(myPath) != INVALID_FILE_ATTRIBUTES))
+			CopyFileW(myPath, targetPath, FALSE);
 	}
 	InstallRegistry();
 	// Win11: also register the modern (new-style) context menu via the sparse

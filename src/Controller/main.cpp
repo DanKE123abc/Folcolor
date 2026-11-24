@@ -615,10 +615,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 		return ok ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 
-	// We're installed? Have registry, or have install folder?
+	// We're installed? Base this on our registry entries only. A leftover
+	// install folder (for example after a partial uninstall) must not hide the
+	// Install button: Install() overwrites the existing files instead.
 	isInstalled = HasInstallRegistry();
-	DWORD attr = GetFileAttributesW(myPathGlobal);
-	isInstalled |= ((attr != INVALID_FILE_ATTRIBUTES) && (attr & FILE_ATTRIBUTE_DIRECTORY));
 
 	// Context-menu action: one process handles every selected folder. The
 	// single-instance check below is intentionally skipped here so a menu
