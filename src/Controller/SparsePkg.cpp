@@ -394,9 +394,10 @@ BOOL InstallSparsePkg()
 
     // Add-AppxPackage validates the signature in the machine-scoped AppX
     // deployment service, which only sees LocalMachine\TrustedPeople (a
-    // CurrentUser store is invisible to it). This needs our elevation.
-    if (!RunMenuScript(L"trust", TRUE))
-        return FALSE;
+    // CurrentUser store is invisible to it). The install script also ensures
+    // this immediately before Add-AppxPackage when it runs elevated, so a
+    // failure here is not fatal.
+    RunMenuScript(L"trust", TRUE);
 
     if (!IsShellUserSameAsCurrent())
     {

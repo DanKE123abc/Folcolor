@@ -88,14 +88,35 @@ switch ($Mode) {
     'install' {
         Remove-UserRegistration
         Remove-TrustedCert 'CurrentUser'
-        try {
-            Add-AppxPackage -Path $Appx -ExternalLocation $External -ErrorAction Stop
-            Write-MenuLog 'package registered'
-        } catch {
-            Write-MenuLog ('package registration failed: ' + $_.Exception.Message)
-            exit 3
+
+        # If this process is elevated (normal same-user install), make sure the
+        # machine trust is in place immediately before Add-AppxPackage. This
+        # also keeps trust and signature validation in the same process, which
+        # is what we verified manually.
+        $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+        if ($isAdmin) {
+            try {
+                Remove-TrustedCert 'LocalMachine'
+                Import-Certificate -FilePath $Cer -CertStoreLocation 'Cert:\LocalMachine\TrustedPeople' | Out-Null
+                Write-MenuLog 'machine certificate ensured'
+            } catch {
+                Write-MenuLog ('machine certificate ensure failed: ' + $_.Exception.Message)
+            }
         }
-        exit 0
+
+        $attempt = 0
+        while ($attempt -lt 2) {
+            $attempt++
+            try {
+                Add-AppxPackage -Path $Appx -ExternalLocation $External -ErrorAction Stop
+                Write-MenuLog 'package registered'
+                exit 0
+            } catch {
+                Write-MenuLog ('package registration attempt ' + $attempt + ' failed: ' + $_.Exception.Message)
+                if ($attempt -lt 2) { Start-Sleep -Milliseconds 800 }
+            }
+        }
+        exit 3
     }
     'uninstall' {
         Remove-UserRegistration
