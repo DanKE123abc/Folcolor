@@ -1,4 +1,4 @@
-
+﻿
 // Folcolor(tm) (c) 2020 Kevin Weatherman
 // MIT license https://opensource.org/licenses/MIT
 #include "StdAfx.h"
@@ -266,6 +266,44 @@ static void InitLanguageCombo(HWND hWnd)
 	SendMessageW(hCombo, CB_SETCURSEL, (WPARAM) g_currentLang, 0);
 }
 
+// Relaunch this executable elevated and wait for it to finish. The app itself
+// runs asInvoker so coloring a folder never shows a UAC prompt; only the
+// install/uninstall/menu operations elevate.
+static BOOL RunElevatedSelf(LPCWSTR parameters, DWORD* exitCode)
+{
+	WCHAR exe[MAX_PATH] = {};
+	if (!GetModuleFileNameW(NULL, exe, _countof(exe)))
+		return FALSE;
+
+	SHELLEXECUTEINFOW info = {};
+	info.cbSize = sizeof(info);
+	info.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NOASYNC;
+	info.lpVerb = L"runas";
+	info.lpFile = exe;
+	info.lpParameters = parameters;
+	info.nShow = SW_SHOWNORMAL;
+
+	if (!ShellExecuteExW(&info))
+		return FALSE;
+
+	if (!info.hProcess)
+	{
+		if (exitCode)
+			*exitCode = 0;
+		return TRUE;
+	}
+
+	DWORD waitResult = WaitForSingleObject(info.hProcess, INFINITE);
+	DWORD code = 1;
+	GetExitCodeProcess(info.hProcess, &code);
+	CloseHandle(info.hProcess);
+
+	if (exitCode)
+		*exitCode = code;
+
+	return waitResult == WAIT_OBJECT_0;
+}
+
 // Our dialog Window message handler
 static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -402,11 +440,15 @@ case IDC_INSTALL_UNINSTALL:
 
 				if (!isInstalled)
 				{
-					Install();
-					isInstalled = TRUE;
-					SetDlgItemTextW(hWnd, IDC_INSTALL_UNINSTALL, uninstallStr);
-					MessageBoxW(hWnd, installCompleteStr, completionStr, (MB_OK | MB_ICONASTERISK));
-					EndDialog(hWnd, 0);
+					DWORD exitCode = 1;
+					if (RunElevatedSelf(L"--install", &exitCode) && (exitCode == 0))
+					{
+						isInstalled = TRUE;
+						SetDlgItemTextW(hWnd, IDC_INSTALL_UNINSTALL, uninstallStr);
+						MessageBoxW(hWnd, installCompleteStr, completionStr, (MB_OK | MB_ICONASTERISK));
+						PromptRestartExplorer(hWnd);
+						EndDialog(hWnd, 0);
+					}
 				}
 				else
 				{
@@ -414,20 +456,25 @@ case IDC_INSTALL_UNINSTALL:
 					swprintf_s(confirmMsg, _countof(confirmMsg), L"%s %s?", PROJECT_NAME_W, confirmUninstallStr);
 					if (MessageBoxW(hWnd, confirmMsg, completionStr, (MB_OKCANCEL | MB_ICONQUESTION)) == IDOK)
 					{
-						int ur = Uninstall();
-						isInstalled = FALSE;
-						SetDlgItemTextW(hWnd, IDC_INSTALL_UNINSTALL, installStr);
-
-						if (ur == 0)
+						DWORD exitCode = 1;
+						if (RunElevatedSelf(L"--uninstall", &exitCode))
 						{
-							wchar_t msg[512];
-							swprintf_s(msg, _countof(msg), L"%s\n\"%s\"\n%s.", registryUninstalledStr, myPathGlobal, manualDeleteStr);
-							MessageBoxW(hWnd, msg, completionStr, (MB_OK | MB_ICONASTERISK));
-						}
-						else
-							MessageBoxW(hWnd, uninstallCompleteStr, completionStr, (MB_OK | MB_ICONASTERISK));
+							isInstalled = FALSE;
+							SetDlgItemTextW(hWnd, IDC_INSTALL_UNINSTALL, installStr);
 
-						EndDialog(hWnd, 0);
+							if (exitCode == 2)
+							{
+								wchar_t msg[512];
+								swprintf_s(msg, _countof(msg), L"%s\n\"%s\"\n%s.", registryUninstalledStr, myPathGlobal, manualDeleteStr);
+								MessageBoxW(hWnd, msg, completionStr, (MB_OK | MB_ICONASTERISK));
+							}
+							else if (exitCode == 0)
+							{
+								MessageBoxW(hWnd, uninstallCompleteStr, completionStr, (MB_OK | MB_ICONASTERISK));
+							}
+
+							EndDialog(hWnd, 0);
+						}
 					}
 				}
 
@@ -439,15 +486,9 @@ case IDC_INSTALL_UNINSTALL:
 				case IDC_WIN11MENU:
 				{
 					BOOL enable = !IsWin11MenuEnabled();
-					BOOL ok = enable ? InstallSparsePkg() : UninstallSparsePkg();
-					if (!ok)
-					{
-						wchar_t message[768];
-						swprintf_s(message, _countof(message), L"%s\n\n%s",
-							GetLangString(g_currentLang, STR_WIN11_MENU_FAIL), GetMenuLogPath());
-						MessageBoxW(hWnd, message, PROJECT_NAME_W, (MB_OK | MB_ICONWARNING));
-					}
-					else
+					DWORD exitCode = 1;
+					BOOL started = RunElevatedSelf(enable ? L"--enable-menu" : L"--disable-menu", &exitCode);
+					if (started && (exitCode == 0))
 					{
 						SetWin11MenuEnabled(enable);
 						HWND hMenu = GetDlgItem(hWnd, IDC_WIN11MENU);
@@ -457,6 +498,13 @@ case IDC_INSTALL_UNINSTALL:
 								enable ? STR_WIN11_MENU_ON : STR_WIN11_MENU_OFF));
 						}
 						PromptRestartExplorer(hWnd);
+					}
+					else if (started || (GetLastError() != ERROR_CANCELLED))
+					{
+						wchar_t message[768];
+						swprintf_s(message, _countof(message), L"%s\n\n%s",
+							GetLangString(g_currentLang, STR_WIN11_MENU_FAIL), GetMenuLogPath());
+						MessageBoxW(hWnd, message, PROJECT_NAME_W, (MB_OK | MB_ICONWARNING));
 					}
 					return (INT_PTR) TRUE;
 				}
@@ -523,10 +571,16 @@ struct MenuCommandLine
 {
 	BOOL installMenu;
 	BOOL uninstallMenu;
+	BOOL installApp;
+	BOOL uninstallApp;
+	BOOL enableMenu;
+	BOOL disableMenu;
 	int colorIndex;
 	std::vector<std::wstring> folders;
 
-	MenuCommandLine() : installMenu(FALSE), uninstallMenu(FALSE), colorIndex(-1) {}
+	MenuCommandLine()
+		: installMenu(FALSE), uninstallMenu(FALSE), installApp(FALSE),
+		  uninstallApp(FALSE), enableMenu(FALSE), disableMenu(FALSE), colorIndex(-1) {}
 };
 
 // Parses the arguments produced by the classic registry verbs and by the
@@ -548,6 +602,14 @@ static void ParseMenuCommandLine(MenuCommandLine& parsed)
 			parsed.installMenu = TRUE;
 		else if (wcscmp(arg, L"--uninstall-menu") == 0)
 			parsed.uninstallMenu = TRUE;
+		else if (wcscmp(arg, L"--install") == 0)
+			parsed.installApp = TRUE;
+		else if (wcscmp(arg, L"--uninstall") == 0)
+			parsed.uninstallApp = TRUE;
+		else if (wcscmp(arg, L"--enable-menu") == 0)
+			parsed.enableMenu = TRUE;
+		else if (wcscmp(arg, L"--disable-menu") == 0)
+			parsed.disableMenu = TRUE;
 		else if (wcsncmp(arg, L"--index=", 8) == 0)
 			parsed.colorIndex = _wtoi(arg + 8);
 		else if (wcscmp(arg, L"--index") == 0 && (i + 1) < argc)
@@ -606,6 +668,26 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 	MenuCommandLine commandLine;
 	ParseMenuCommandLine(commandLine);
 
+	// Elevated modes: the UI runs asInvoker, so install/uninstall/menu
+	// operations relaunch this exe with "runas" and land here.
+	if (commandLine.installApp)
+	{
+		Install();
+		return EXIT_SUCCESS;
+	}
+	if (commandLine.uninstallApp)
+	{
+		return (Uninstall() == 1) ? EXIT_SUCCESS : 2;
+	}
+	if (commandLine.enableMenu)
+	{
+		return InstallSparsePkg() ? EXIT_SUCCESS : EXIT_FAILURE;
+	}
+	if (commandLine.disableMenu)
+	{
+		return UninstallSparsePkg() ? EXIT_SUCCESS : EXIT_FAILURE;
+	}
+
 	// Hidden helper modes used when the elevated installer has to register the
 	// per-user package in the signed-in user's context.
 	if (commandLine.installMenu || commandLine.uninstallMenu)
@@ -625,13 +707,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 	// click still works while the main dialog is open.
 	if ((commandLine.colorIndex >= 0) && !commandLine.folders.empty())
 	{
-		if (isInstalled)
+		// Do not gate this on the registry: the Win11 package can be
+		// registered while the classic menu is not, and the action only needs
+		// the installed exe (myPathGlobal/icons).
+		for (size_t i = 0; i < commandLine.folders.size(); i++)
 		{
-			for (size_t i = 0; i < commandLine.folders.size(); i++)
-			{
-				SetFolderColor(commandLine.colorIndex,
-					const_cast<LPWSTR>(commandLine.folders[i].c_str()));
-			}
+			SetFolderColor(commandLine.colorIndex,
+				const_cast<LPWSTR>(commandLine.folders[i].c_str()));
 		}
 		return EXIT_SUCCESS;
 	}

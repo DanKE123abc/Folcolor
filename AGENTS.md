@@ -3,7 +3,9 @@
 ## What This Is
 Windows folder color customization utility. A small Win32 C/C++ executable
 (~1MB) plus an optional out-of-process Windows 11 context-menu DLL. The app
-requires admin (UAC) because it writes `HKCR` and installs under Program Files.
+runs asInvoker so coloring a folder never needs elevation; Install/Uninstall
+and Win11 menu changes relaunch themselves with `runas` because they write
+`HKCR`, Program Files and the machine certificate store.
 
 ## Build
 ```
@@ -64,7 +66,10 @@ zip).
 - `src/Controller/Language.cpp` — i18n (detects system language, owns `g_isWin11`)
 
 ## Runtime Behavior
-- Installs to `%ProgramFiles%\Folcolor\`
+- Runs asInvoker; color actions and the dialog need no UAC.
+- Install/Uninstall relaunch the exe elevated with `--install` / `--uninstall`;
+  the Win11 toggle uses `--enable-menu` / `--disable-menu`.
+- Installs to `%ProgramFiles(x86)%\Folcolor\` (the app is x86)
 - Registers classic context menus at `HKCR\Directory\shell\Folcolor` (all
   Windows) and `HKCU\Software\Classes\Directory\Background\shell\Folcolor`
   (Win11 background)

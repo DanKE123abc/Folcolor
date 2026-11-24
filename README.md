@@ -83,9 +83,11 @@ fails, the classic context menu is still installed and functional.
   screens, no data collection, and no in-process Explorer shell extension.
 
 ## Requirements
-Windows 7 to 11, 32-bit or 64-bit. The Windows 11 first-level context menu
-requires Windows 11 22H2 (build 22000) or later; the classic menu works on all
-supported versions.
+Windows 7 to 11, 32-bit or 64-bit. Folcolor colors folders without elevation;
+only installation, uninstallation and the Windows 11 menu toggle request
+administrator approval. The Windows 11 first-level context menu requires
+Windows 11 22H2 (build 22000) or later; the classic menu works on all supported
+versions.
 
 ## Motivation
 After trying several commercial and free implementations of similar coloring tools, they were all lacking in one way or another.  Many had security red flags, advertising pop-ups, odd color schemes, using bloated Windows explorer shell Extensions, and/or with disagreeable license terms.  

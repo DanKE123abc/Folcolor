@@ -438,6 +438,68 @@ BOOL UninstallSparsePkg()
 // ---------------------------------------------------------------------------
 // Explorer restart
 // ---------------------------------------------------------------------------
+static BOOL IsProcessElevated()
+{
+    HANDLE token = NULL;
+    if (!::OpenProcessToken(::GetCurrentProcess(), TOKEN_QUERY, &token))
+        return FALSE;
+
+    TOKEN_ELEVATION elevation = {};
+    DWORD size = 0;
+    BOOL elevated = FALSE;
+    if (::GetTokenInformation(token, TokenElevation, &elevation, sizeof(elevation), &size))
+        elevated = elevation.TokenIsElevated != 0;
+
+    ::CloseHandle(token);
+    return elevated;
+}
+
+// Medium-integrity caller (the normal UI): Explorer belongs to the same user,
+// so kill it and start a normal (non-elevated) copy.
+static BOOL RestartExplorerDirect()
+{
+    HWND shell = ::GetShellWindow();
+    if (!shell)
+        return FALSE;
+
+    DWORD pid = 0;
+    ::GetWindowThreadProcessId(shell, &pid);
+    if (!pid)
+        return FALSE;
+
+    HANDLE process = ::OpenProcess(PROCESS_TERMINATE | SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE, pid);
+    if (!process)
+        return FALSE;
+
+    ::TerminateProcess(process, 0);
+    ::WaitForSingleObject(process, 5000);
+    ::CloseHandle(process);
+    ::Sleep(800);
+
+    WCHAR explorer[MAX_PATH] = {};
+    if (::GetWindowsDirectoryW(explorer, _countof(explorer)) == 0)
+        return FALSE;
+    if (wcscat_s(explorer, _countof(explorer), L"\\explorer.exe") != 0)
+        return FALSE;
+
+    std::wstring commandLine = L"\"";
+    commandLine += explorer;
+    commandLine += L"\"";
+
+    STARTUPINFOW si = {};
+    si.cb = sizeof(si);
+    PROCESS_INFORMATION pi = {};
+    BOOL ok = ::CreateProcessW(explorer, &commandLine[0], NULL, NULL, FALSE, 0,
+                               NULL, NULL, &si, &pi) != FALSE;
+    if (ok)
+    {
+        ::CloseHandle(pi.hProcess);
+        ::CloseHandle(pi.hThread);
+    }
+
+    return ok;
+}
+
 static BOOL RestartExplorerAsShellUser()
 {
     HWND shell = ::GetShellWindow();
@@ -516,7 +578,7 @@ void PromptRestartExplorer(HWND owner)
     if (::MessageBoxW(owner, prompt, PROJECT_NAME_W, MB_YESNO | MB_ICONQUESTION) != IDYES)
         return;
 
-    if (!RestartExplorerAsShellUser())
+    if (!(IsProcessElevated() ? RestartExplorerAsShellUser() : RestartExplorerDirect()))
     {
         const wchar_t* failed = GetLangString(g_currentLang, STR_RESTART_FAILED);
         ::MessageBoxW(owner, failed, PROJECT_NAME_W, MB_OK | MB_ICONWARNING);

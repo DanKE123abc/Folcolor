@@ -112,7 +112,6 @@ static void InstallShellMenu(HKEY _root, LPCSTR _rootRegPath, const char* _iconS
 	WRITE_STRING(colorKey, "Icon", buffer, (len + 1));
 	const wchar_t* launchW = GetLangString(g_currentLang, STR_LAUNCH_FOLCOLOR);
 	RegSetValueExW(colorKey, L"MUIVerb", 0, REG_SZ, (PBYTE)launchW, (DWORD)((wcslen(launchW) + 1) * sizeof(wchar_t)));
-	WRITE_LITERAL(colorKey, "HasLUAShield", "");
 	WRITE_DWORD(colorKey, "CommandFlags", 0x20);
 	CREATE_SUBKEY(colorKey, "command", cmdKey);
 	len = sprintf_s(buffer, sizeof(buffer), "%s" TARGET_NAME, _iconSrcPath);
@@ -197,10 +196,6 @@ void Install()
 			swprintf_s(message, _countof(message), L"%s\n\n%s",
 				GetLangString(g_currentLang, STR_WIN11_MENU_FAIL), GetMenuLogPath());
 			MessageBoxW(NULL, message, PROJECT_NAME_W, (MB_OK | MB_ICONINFORMATION));
-		}
-		else
-		{
-			PromptRestartExplorer(NULL);
 		}
 	}
 	// Without this the app icon might not show up in explorer right away
